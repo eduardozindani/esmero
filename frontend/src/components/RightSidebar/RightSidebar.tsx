@@ -1,4 +1,7 @@
 import { useState, useEffect } from 'react'
+import ConversationDisplay from './ConversationDisplay'
+import InputArea from './InputArea'
+import type { Message } from './types'
 
 interface RightSidebarProps {
   isExpanded: boolean
@@ -9,12 +12,37 @@ interface RightSidebarProps {
 function RightSidebar({ isExpanded, onToggle, selectedText }: RightSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
+  const [messages, setMessages] = useState<Message[]>([])
 
   useEffect(() => {
     // Reset triggers when expansion state changes
     setShowOpenTrigger(false)
     setShowCloseTrigger(false)
   }, [isExpanded])
+
+  const handleSendMessage = (content: string) => {
+    const userMessage: Message = {
+      role: 'user',
+      content,
+      timestamp: Date.now()
+    }
+    setMessages(prev => [...prev, userMessage])
+
+    // TODO: Send to backend and get agent response
+    // For now, mock response
+    setTimeout(() => {
+      const agentMessage: Message = {
+        role: 'agent',
+        content: 'This is a mock response. Backend integration pending.',
+        timestamp: Date.now()
+      }
+      setMessages(prev => [...prev, agentMessage])
+    }, 500)
+  }
+
+  const handleClear = () => {
+    setMessages([])
+  }
 
   return (
     <>
@@ -43,9 +71,9 @@ function RightSidebar({ isExpanded, onToggle, selectedText }: RightSidebarProps)
       {/* Expanded state: full sidebar */}
       <div
         className={`
-          bg-gray-50 border-l border-gray-200 p-4 relative
+          bg-gray-50 border-l border-gray-200 relative flex flex-col
           transition-all duration-300 ease-in-out
-          ${isExpanded ? 'w-80' : 'w-0 overflow-hidden p-0 border-0'}
+          ${isExpanded ? 'w-80' : 'w-0 overflow-hidden border-0'}
         `}
       >
         {isExpanded && (
@@ -70,13 +98,22 @@ function RightSidebar({ isExpanded, onToggle, selectedText }: RightSidebarProps)
               </div>
             </div>
 
-            <p className="text-sm text-gray-500 mb-4">Agent</p>
-            {selectedText && (
-              <div className="text-xs text-gray-400 bg-white p-2 rounded border border-gray-200">
-                <p className="font-medium mb-1">Selected:</p>
-                <p className="italic">{selectedText}</p>
-              </div>
-            )}
+            {/* Header */}
+            <div className="p-4 border-b border-gray-200">
+              <p className="text-sm text-gray-500">Agent</p>
+              {selectedText && (
+                <div className="mt-2 text-xs text-gray-400 bg-white p-2 rounded border border-gray-200">
+                  <p className="font-medium mb-1">Selected:</p>
+                  <p className="italic line-clamp-3">{selectedText}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Conversation */}
+            <ConversationDisplay messages={messages} />
+
+            {/* Input Area */}
+            <InputArea onSendMessage={handleSendMessage} onClear={handleClear} />
           </>
         )}
       </div>

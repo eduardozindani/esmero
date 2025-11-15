@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import LeftSidebar from './components/LeftSidebar'
 import Canvas from './components/Canvas'
-import RightSidebar from './components/RightSidebar'
+import RightSidebar from './components/RightSidebar/RightSidebar'
 
 function App() {
   const [canvasContent, setCanvasContent] = useState('')
