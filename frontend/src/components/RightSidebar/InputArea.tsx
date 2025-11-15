@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 
 interface InputAreaProps {
   onSendMessage: (message: string) => void
@@ -6,15 +6,6 @@ interface InputAreaProps {
 
 function InputArea({ onSendMessage }: InputAreaProps) {
   const [input, setInput] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-
-  // Auto-grow textarea based on content
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto'
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`
-    }
-  }, [input])
 
   const handleSend = () => {
     if (input.trim()) {
@@ -33,12 +24,12 @@ function InputArea({ onSendMessage }: InputAreaProps) {
   return (
     <div className="p-4 relative">
       <textarea
-        ref={textareaRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKeyDown}
         placeholder="Ask the agent..."
-        className="w-full pr-12 p-3 text-sm text-gray-900 placeholder-gray-400 bg-white border border-gray-200 rounded resize-none overflow-hidden focus:outline-none focus:border-gray-300 transition min-h-[80px] max-h-[200px]"
+        rows={2}
+        className="w-full pr-12 p-3 text-sm text-gray-900 placeholder-gray-400 bg-white border border-gray-200 rounded resize-none overflow-y-auto focus:outline-none focus:border-gray-300 transition"
       />
       {input.trim() && (
         <button

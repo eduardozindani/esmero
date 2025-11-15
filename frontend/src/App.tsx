@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import LeftSidebar from './components/LeftSidebar'
 import Canvas from './components/Canvas'
 import RightSidebar from './components/RightSidebar/RightSidebar'
 import { useDocuments, useProjects } from './hooks/useLocalStorage'
 import { generateTitle } from './services/api'
+import { generateId } from './utils/id'
 import type { Document } from './types'
 
 function App() {
@@ -16,58 +17,58 @@ function App() {
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(false)
   const [rightSidebarExpanded, setRightSidebarExpanded] = useState(false)
 
+  // Track pending title generation to prevent race conditions
+  const titleGenerationRef = useRef<string | null>(null)
+
   const handleSaveDocument = async () => {
     const content = canvasContent.trim()
     if (content.length === 0) return
 
     const now = Date.now()
+    const isUpdate = !!currentDocumentId
 
-    if (currentDocumentId) {
-      // Update existing document
-      const updatedDocuments = documents.map(doc =>
-        doc.id === currentDocumentId
-          ? { ...doc, content, updatedAt: now, title: '' }
-          : doc
-      )
-      setDocuments(updatedDocuments)
+    // Determine document ID
+    const docId = isUpdate ? currentDocumentId : generateId('doc')
 
-      // Clear canvas and reset state
-      setCanvasContent('')
-      setCurrentDocumentId(null)
+    // Create or update document
+    const newDoc: Document = isUpdate
+      ? {
+          ...documents.find(d => d.id === docId)!,
+          content,
+          updatedAt: now,
+          title: ''
+        }
+      : {
+          id: docId,
+          content,
+          title: '',
+          createdAt: now,
+          updatedAt: now,
+          projectId: currentProjectId,
+        }
 
-      // Generate title in background
-      const title = await generateTitle(content)
+    // Update documents array (single update)
+    const updatedDocuments = isUpdate
+      ? documents.map(doc => doc.id === docId ? newDoc : doc)
+      : [...documents, newDoc]
+
+    setDocuments(updatedDocuments)
+
+    // Clear canvas
+    setCanvasContent('')
+    setCurrentDocumentId(null)
+
+    // Generate title in background (with race condition protection)
+    titleGenerationRef.current = docId
+    const title = await generateTitle(content)
+
+    // Only update if this is still the most recent save
+    if (titleGenerationRef.current === docId) {
       const finalDocuments = updatedDocuments.map(doc =>
-        doc.id === currentDocumentId
-          ? { ...doc, title }
-          : doc
+        doc.id === docId ? { ...doc, title } : doc
       )
       setDocuments(finalDocuments)
-    } else {
-      // Create new document
-      const newDoc: Document = {
-        id: `doc-${now}`,
-        content,
-        title: '',
-        createdAt: now,
-        updatedAt: now,
-        projectId: currentProjectId,
-      }
-
-      const updatedDocuments = [...documents, newDoc]
-      setDocuments(updatedDocuments)
-
-      // Clear canvas
-      setCanvasContent('')
-
-      // Generate title in background
-      const title = await generateTitle(content)
-      const finalDocuments = updatedDocuments.map(doc =>
-        doc.id === newDoc.id
-          ? { ...doc, title }
-          : doc
-      )
-      setDocuments(finalDocuments)
+      titleGenerationRef.current = null
     }
   }
 
@@ -82,7 +83,7 @@ function App() {
   const handleCreateProject = (name: string) => {
     const now = Date.now()
     const newProject = {
-      id: `proj-${now}`,
+      id: generateId('proj'),
       name,
       createdAt: now,
       updatedAt: now,
@@ -90,6 +91,16 @@ function App() {
 
     setProjects([...projects, newProject])
     setCurrentProjectId(newProject.id)
+  }
+
+  const handleUpdateProjectName = (projectId: string, newName: string) => {
+    const now = Date.now()
+    const updatedProjects = projects.map(project =>
+      project.id === projectId
+        ? { ...project, name: newName, updatedAt: now }
+        : project
+    )
+    setProjects(updatedProjects)
   }
 
   return (
@@ -103,6 +114,7 @@ function App() {
         onDocumentClick={handleLoadDocument}
         onCreateProject={handleCreateProject}
         onProjectClick={setCurrentProjectId}
+        onUpdateProjectName={handleUpdateProjectName}
       />
       <Canvas
         content={canvasContent}

@@ -10,6 +10,7 @@ interface LeftSidebarProps {
   onDocumentClick: (documentId: string) => void
   onCreateProject: (name: string) => void
   onProjectClick: (projectId: string | null) => void
+  onUpdateProjectName: (projectId: string, newName: string) => void
 }
 
 function LeftSidebar({
@@ -20,10 +21,13 @@ function LeftSidebar({
   currentProjectId,
   onDocumentClick,
   onCreateProject,
-  onProjectClick
+  onProjectClick,
+  onUpdateProjectName
 }: LeftSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
+  const [editingProjectName, setEditingProjectName] = useState(false)
+  const [editedName, setEditedName] = useState('')
 
   useEffect(() => {
     // Reset triggers when expansion state changes
@@ -94,15 +98,17 @@ function LeftSidebar({
             </div>
 
             <div className="flex flex-col h-full">
-              {/* Header */}
-              <div className="mb-4">
-                <button
-                  onClick={() => onCreateProject('New Project')}
-                  className="w-full text-sm bg-gray-800 text-white px-3 py-2 rounded hover:bg-gray-700 transition"
-                >
-                  + New Project
-                </button>
-              </div>
+              {/* Header - only show New Project button when NOT in a project */}
+              {!currentProjectId && (
+                <div className="mb-4">
+                  <button
+                    onClick={() => onCreateProject('New Project')}
+                    className="w-full text-sm bg-gray-800 text-white px-3 py-2 rounded hover:bg-gray-700 transition"
+                  >
+                    + New Project
+                  </button>
+                </div>
+              )}
 
               {/* Back button when inside a project */}
               {currentProjectId && (
@@ -113,6 +119,43 @@ function LeftSidebar({
                   >
                     ← Back to All
                   </button>
+                </div>
+              )}
+
+              {/* Project name header when inside a project */}
+              {currentProjectId && (
+                <div className="mb-4">
+                  {editingProjectName ? (
+                    <input
+                      type="text"
+                      value={editedName}
+                      onChange={(e) => setEditedName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          onUpdateProjectName(currentProjectId, editedName)
+                          setEditingProjectName(false)
+                        } else if (e.key === 'Escape') {
+                          setEditingProjectName(false)
+                        }
+                      }}
+                      onBlur={() => setEditingProjectName(false)}
+                      autoFocus
+                      className="w-full text-lg font-bold px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
+                    />
+                  ) : (
+                    <h2
+                      onClick={() => {
+                        const project = projects.find(p => p.id === currentProjectId)
+                        if (project) {
+                          setEditedName(project.name)
+                          setEditingProjectName(true)
+                        }
+                      }}
+                      className="text-lg font-bold cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition"
+                    >
+                      {projects.find(p => p.id === currentProjectId)?.name || 'Untitled'}
+                    </h2>
+                  )}
                 </div>
               )}
 
