@@ -6,16 +6,25 @@ import RightSidebar from './components/RightSidebar'
 function App() {
   const [canvasContent, setCanvasContent] = useState('')
   const [selectedText, setSelectedText] = useState<string | null>(null)
+  const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(false)
+  const [rightSidebarExpanded, setRightSidebarExpanded] = useState(false)
 
   return (
     <div className="h-screen flex">
-      <LeftSidebar />
+      <LeftSidebar
+        isExpanded={leftSidebarExpanded}
+        onToggle={() => setLeftSidebarExpanded(!leftSidebarExpanded)}
+      />
       <Canvas
         content={canvasContent}
         onChange={setCanvasContent}
         onSelectionChange={setSelectedText}
       />
-      <RightSidebar selectedText={selectedText} />
+      <RightSidebar
+        isExpanded={rightSidebarExpanded}
+        onToggle={() => setRightSidebarExpanded(!rightSidebarExpanded)}
+        selectedText={selectedText}
+      />
     </div>
   )
 }
