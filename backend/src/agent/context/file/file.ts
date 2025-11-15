@@ -11,12 +11,19 @@ interface Document {
   projectId: string | null
 }
 
+interface Project {
+  id: string
+  name: string
+}
+
 interface FileContextInput {
+  userMessage: string  // User's current message (for relevance filtering)
   selectedText: string | undefined
   canvasContent: string  // Live canvas content (HTML)
   currentDocumentId: string | undefined
   currentProjectId: string | undefined
   documents: Document[]
+  projects: Project[]
 }
 
 /**
@@ -26,19 +33,21 @@ interface FileContextInput {
 export async function determineFile(input: FileContextInput): Promise<FileContext> {
   try {
     const {
+      userMessage,
       selectedText,
       canvasContent,
       currentDocumentId,
       currentProjectId,
-      documents
+      documents,
+      projects
     } = input
 
     // Execute in parallel (AI Chef pattern)
-    // Note: These are synchronous, but structured for future async operations
+    // Now includes intelligent LLM-based filtering for relevance
     const [selection, currentPage, projectDocuments] = await Promise.all([
       Promise.resolve(getCurrentSelection(selectedText)),
       Promise.resolve(getCurrentPage(canvasContent, currentDocumentId, documents)),
-      Promise.resolve(getRelevantDocuments(currentProjectId, currentDocumentId, documents))
+      getRelevantDocuments(userMessage, currentProjectId, currentDocumentId, documents, projects)
     ])
 
     // Format into structured text for LLM

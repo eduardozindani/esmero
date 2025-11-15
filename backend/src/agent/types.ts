@@ -85,6 +85,10 @@ export interface IncomingAgentRequest {
     content: string
     projectId: string | null
   }>
+  projects: Array<{
+    id: string
+    name: string
+  }>
 }
 
 // Zod schema for agent response (structured LLM output)

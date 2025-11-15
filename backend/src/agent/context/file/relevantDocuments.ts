@@ -1,3 +1,5 @@
+import { filterRelevantProjects, filterRelevantDocuments } from './relevance.js'
+
 interface Document {
   id: string
   title: string
@@ -5,38 +7,118 @@ interface Document {
   projectId: string | null
 }
 
+interface Project {
+  id: string
+  name: string
+}
+
 /**
- * Get relevant documents (project-scoped)
- * MVP: Returns recent documents from same project
- * Following AI Chef pattern of parallel retrieval
+ * Get relevant documents with intelligent LLM-based filtering
+ * Following AI Chef pattern: parallel execution + smart relevance
+ *
+ * Strategy:
+ * 1. Filter projects (if > 5) - parallel
+ * 2. Filter loose documents (if > 5) - parallel with #1
+ * 3. For each selected project, filter documents (if > 5) - all parallel
  */
-export function getRelevantDocuments(
+export async function getRelevantDocuments(
+  userMessage: string,
   currentProjectId: string | undefined,
   currentDocumentId: string | undefined,
-  documents: Document[]
-): Array<{ id: string; title: string; content: string }> {
-  // Filter to current project (or null project if no project selected)
-  const projectDocuments = documents.filter(doc => {
-    // Exclude the current document
-    if (doc.id === currentDocumentId) return false
+  documents: Document[],
+  projects: Project[]
+): Promise<Array<{ id: string; title: string; content: string }>> {
+  try {
+    // Separate documents into loose (no project) and project-scoped
+    const looseDocuments = documents.filter(doc =>
+      doc.projectId === null && doc.id !== currentDocumentId
+    )
 
-    // Match project ID
-    return doc.projectId === (currentProjectId || null)
-  })
+    // Group documents by project
+    const documentsByProject = new Map<string, Document[]>()
+    documents.forEach(doc => {
+      if (doc.projectId && doc.id !== currentDocumentId) {
+        if (!documentsByProject.has(doc.projectId)) {
+          documentsByProject.set(doc.projectId, [])
+        }
+        documentsByProject.get(doc.projectId)!.push(doc)
+      }
+    })
 
-  // Sort by most recent (assuming IDs contain timestamps or have natural ordering)
-  // For MVP, take top 5 most recent
-  const MAX_RELEVANT = 5
+    // ========================================================================
+    // PARALLEL EXECUTION: Filter projects AND loose documents simultaneously
+    // ========================================================================
 
-  const relevant = projectDocuments
-    .slice(0, MAX_RELEVANT)
-    .map(doc => ({
+    const [relevantProjectIds, relevantLooseDocIds] = await Promise.all([
+      // Filter projects (if > 5)
+      filterRelevantProjects(projects, userMessage),
+
+      // Filter loose documents (if > 5)
+      filterRelevantDocuments(
+        looseDocuments.map(d => ({ id: d.id, title: d.title })),
+        userMessage,
+        'loose documents'
+      )
+    ])
+
+    // ========================================================================
+    // PARALLEL EXECUTION: Filter documents within each selected project
+    // ========================================================================
+
+    const projectDocumentFilterPromises = relevantProjectIds.map(async projectId => {
+      const projectDocs = documentsByProject.get(projectId) || []
+
+      // Filter documents within this project (if > 5)
+      const relevantDocIds = await filterRelevantDocuments(
+        projectDocs.map(d => ({ id: d.id, title: d.title })),
+        userMessage,
+        `documents in project ${projects.find(p => p.id === projectId)?.name || projectId}`
+      )
+
+      return projectDocs.filter(doc => relevantDocIds.includes(doc.id))
+    })
+
+    const projectDocumentsArrays = await Promise.all(projectDocumentFilterPromises)
+
+    // ========================================================================
+    // Combine results
+    // ========================================================================
+
+    // Get actual loose documents
+    const selectedLooseDocs = looseDocuments.filter(doc =>
+      relevantLooseDocIds.includes(doc.id)
+    )
+
+    // Flatten project documents
+    const selectedProjectDocs = projectDocumentsArrays.flat()
+
+    // Combine and return
+    const allRelevantDocs = [...selectedLooseDocs, ...selectedProjectDocs]
+
+    return allRelevantDocs.map(doc => ({
       id: doc.id,
       title: doc.title,
       content: extractPlainText(doc.content)
     }))
 
-  return relevant
+  } catch (error) {
+    console.error('Error getting relevant documents:', error)
+
+    // Graceful fallback: return first 5 documents from current project
+    const fallbackDocs = documents
+      .filter(doc => {
+        if (doc.id === currentDocumentId) return false
+        return doc.projectId === (currentProjectId || null)
+      })
+      .slice(0, 5)
+      .map(doc => ({
+        id: doc.id,
+        title: doc.title,
+        content: extractPlainText(doc.content)
+      }))
+
+    return fallbackDocs
+  }
 }
 
 /**

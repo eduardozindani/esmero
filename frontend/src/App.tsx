@@ -220,6 +220,7 @@ function App() {
         currentDocumentId={currentDocumentId}
         currentProjectId={currentProjectId}
         documents={documents}
+        projects={projects}
         onDiffReceived={setPendingDiffChunks}
       />
     </div>

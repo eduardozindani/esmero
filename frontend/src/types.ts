@@ -32,6 +32,7 @@ export interface AgentRequest {
   currentDocumentId?: string
   currentProjectId?: string
   documents: Document[]
+  projects: Project[]
 }
 
 // Agent Response (received from backend)

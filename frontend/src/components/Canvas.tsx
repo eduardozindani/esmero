@@ -5,7 +5,7 @@ import Heading from '@tiptap/extension-heading'
 import Bold from '@tiptap/extension-bold'
 import Italic from '@tiptap/extension-italic'
 import FloatingToolbar from './FloatingToolbar'
-import DiffOverlay from './DiffOverlay'
+import { DiffExtension } from '../extensions/DiffExtension'
 
 interface CanvasProps {
   content: string
@@ -47,6 +47,10 @@ function Canvas({
       }),
       Bold,
       Italic,
+      DiffExtension.configure({
+        onAcceptChunk: onAcceptChunk,
+        onRejectChunk: onRejectChunk,
+      }),
     ],
     content: content,
     autofocus: 'start',
@@ -73,6 +77,60 @@ function Canvas({
       editor.commands.setContent(content)
     }
   }, [content, editor])
+
+  // Update diff chunks when they change
+  useEffect(() => {
+    if (!editor) return
+
+    if (pendingDiffChunks && pendingDiffChunks.length > 0) {
+      editor.commands.setDiffChunks(pendingDiffChunks)
+    } else {
+      editor.commands.setDiffChunks([])
+    }
+  }, [editor, pendingDiffChunks])
+
+  // Global click handler for diff buttons (bypasses TipTap event system)
+  useEffect(() => {
+    const editorElement = editorRef.current
+    if (!editorElement) return
+
+    const handleClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+
+      // Check if click is on accept button
+      const acceptBtn = target.closest('.diff-accept-btn') as HTMLElement
+      if (acceptBtn) {
+        const chunkId = acceptBtn.dataset.chunkId
+        if (chunkId) {
+          e.preventDefault()
+          e.stopPropagation()
+          console.log('Accept button clicked:', chunkId)
+          onAcceptChunk(chunkId)
+          return
+        }
+      }
+
+      // Check if click is on reject button
+      const rejectBtn = target.closest('.diff-reject-btn') as HTMLElement
+      if (rejectBtn) {
+        const chunkId = rejectBtn.dataset.chunkId
+        if (chunkId) {
+          e.preventDefault()
+          e.stopPropagation()
+          console.log('Reject button clicked:', chunkId)
+          onRejectChunk(chunkId)
+          return
+        }
+      }
+    }
+
+    // Attach to editor container with capture phase
+    editorElement.addEventListener('click', handleClick, true)
+
+    return () => {
+      editorElement.removeEventListener('click', handleClick, true)
+    }
+  }, [onAcceptChunk, onRejectChunk])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -128,14 +186,15 @@ function Canvas({
     >
       <EditorContent editor={editor} />
       {editor && <FloatingToolbar editor={editor} />}
-      {editor && pendingDiffChunks && pendingDiffChunks.length > 0 && (
-        <DiffOverlay
-          editor={editor}
-          chunks={pendingDiffChunks}
-          onAccept={onAcceptChunk}
-          onReject={onRejectChunk}
-          onRejectAll={onRejectAllDiffs}
-        />
+      {pendingDiffChunks && pendingDiffChunks.length > 0 && (
+        <div className="fixed top-4 right-96 z-20">
+          <button
+            onClick={onRejectAllDiffs}
+            className="px-3 py-1 bg-gray-800 text-white text-sm rounded shadow-lg hover:bg-gray-900 transition"
+          >
+            Reject All Changes
+          </button>
+        </div>
       )}
     </div>
   )

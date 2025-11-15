@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import ConversationDisplay from './ConversationDisplay'
 import InputArea from './InputArea'
 import type { Message } from './types'
-import type { Document } from '../../types'
+import type { Document, Project } from '../../types'
 import { sendAgentMessage } from '../../services/api'
 
 interface RightSidebarProps {
@@ -13,6 +13,7 @@ interface RightSidebarProps {
   currentDocumentId: string | null
   currentProjectId: string | null
   documents: Document[]
+  projects: Project[]
   onDiffReceived: (chunks: Array<{ id: string; oldText: string; newText: string; explanation: string }> | null) => void
 }
 
@@ -24,6 +25,7 @@ function RightSidebar({
   currentDocumentId,
   currentProjectId,
   documents,
+  projects,
   onDiffReceived
 }: RightSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
@@ -66,7 +68,8 @@ function RightSidebar({
         selectedText: selectedText || undefined,
         currentDocumentId: currentDocumentId || undefined,
         currentProjectId: currentProjectId || undefined,
-        documents
+        documents,
+        projects
       })
 
       // Update agent message with response

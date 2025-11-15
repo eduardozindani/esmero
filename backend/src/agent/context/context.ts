@@ -16,13 +16,15 @@ export async function determineContext(
       // Conversation context: recent messages + history
       determineConversation(request.conversationHistory),
 
-      // File context: selection + current page + relevant documents
+      // File context: selection + current page + relevant documents (with LLM filtering)
       determineFile({
+        userMessage: request.userMessage,
         selectedText: request.selectedText,
         canvasContent: request.canvasContent,
         currentDocumentId: request.currentDocumentId,
         currentProjectId: request.currentProjectId,
-        documents: request.documents
+        documents: request.documents,
+        projects: request.projects
       })
     ])
 
