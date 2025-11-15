@@ -1,5 +1,8 @@
 import { useState, useEffect } from 'react'
 import type { Document, Project } from '../types'
+import FolderClosed from './icons/FolderClosed'
+import FolderOpen from './icons/FolderOpen'
+import DocumentIcon from './icons/DocumentIcon'
 
 interface LeftSidebarProps {
   isExpanded: boolean
@@ -126,24 +129,27 @@ function LeftSidebar({
               {currentProjectId && (
                 <div className="mb-4">
                   {editingProjectName ? (
-                    <input
-                      type="text"
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          onUpdateProjectName(currentProjectId, editedName)
-                          setEditingProjectName(false)
-                        } else if (e.key === 'Escape') {
-                          setEditingProjectName(false)
-                        }
-                      }}
-                      onBlur={() => setEditingProjectName(false)}
-                      autoFocus
-                      className="w-full text-lg font-bold px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
-                    />
+                    <div className="flex items-center gap-2">
+                      <FolderOpen className="flex-shrink-0 text-gray-600" />
+                      <input
+                        type="text"
+                        value={editedName}
+                        onChange={(e) => setEditedName(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            onUpdateProjectName(currentProjectId, editedName)
+                            setEditingProjectName(false)
+                          } else if (e.key === 'Escape') {
+                            setEditingProjectName(false)
+                          }
+                        }}
+                        onBlur={() => setEditingProjectName(false)}
+                        autoFocus
+                        className="flex-1 text-lg font-bold px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
+                      />
+                    </div>
                   ) : (
-                    <h2
+                    <div
                       onClick={() => {
                         const project = projects.find(p => p.id === currentProjectId)
                         if (project) {
@@ -151,10 +157,13 @@ function LeftSidebar({
                           setEditingProjectName(true)
                         }
                       }}
-                      className="text-lg font-bold cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition"
+                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition"
                     >
-                      {projects.find(p => p.id === currentProjectId)?.name || 'Untitled'}
-                    </h2>
+                      <FolderOpen className="flex-shrink-0 text-gray-600" />
+                      <h2 className="text-lg font-bold truncate">
+                        {projects.find(p => p.id === currentProjectId)?.name || 'Untitled'}
+                      </h2>
+                    </div>
                   )}
                 </div>
               )}
@@ -162,14 +171,14 @@ function LeftSidebar({
               {/* Projects Section */}
               {!currentProjectId && sortedProjects.length > 0 && (
                 <div className="mb-4">
-                  <p className="text-xs text-gray-500 mb-2">PROJECTS</p>
                   {sortedProjects.map(project => (
                     <div
                       key={project.id}
                       onClick={() => onProjectClick(project.id)}
-                      className="p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
+                      className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
                     >
-                      <p className="text-sm text-gray-800 font-medium truncate">
+                      <FolderClosed className="flex-shrink-0 text-gray-600" />
+                      <p className="text-sm text-gray-800 font-bold truncate">
                         {project.name}
                       </p>
                     </div>
@@ -179,13 +188,13 @@ function LeftSidebar({
 
               {/* Documents Section */}
               <div className="flex-1 overflow-y-auto">
-                <p className="text-xs text-gray-500 mb-2">DOCUMENTS</p>
                 {sortedDocuments.map(doc => (
                   <div
                     key={doc.id}
                     onClick={() => onDocumentClick(doc.id)}
-                    className="p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
+                    className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
                   >
+                    <DocumentIcon className="flex-shrink-0 text-gray-600" />
                     <p className="text-sm text-gray-800 truncate">
                       {doc.title || 'Untitled'}
                     </p>

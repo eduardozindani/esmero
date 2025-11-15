@@ -29,15 +29,15 @@ function InputArea({ onSendMessage }: InputAreaProps) {
         onKeyDown={handleKeyDown}
         placeholder="Ask the agent..."
         rows={2}
-        className="w-full pr-12 p-3 text-sm text-gray-900 placeholder-gray-400 bg-white border border-gray-200 rounded resize-none overflow-y-auto focus:outline-none focus:border-gray-300 transition"
+        className="w-full pr-12 p-3 text-sm text-gray-900 placeholder-gray-400 bg-gray-50 border border-gray-200 rounded-xl resize-none overflow-y-auto focus:outline-none focus:border-gray-300 transition"
       />
       {input.trim() && (
         <button
           onClick={handleSend}
-          className="absolute bottom-6 right-6 w-8 h-8 bg-gray-900 text-white rounded-full hover:bg-gray-800 transition flex items-center justify-center"
+          className="absolute bottom-6 right-6 text-gray-500 hover:text-gray-700 transition"
         >
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-            <path d="M8 3l5 5-1.5 1.5L9 7v6H7V7L4.5 9.5 3 8l5-5z"/>
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M10 15V5M10 5L6 9M10 5L14 9" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </button>
       )}
