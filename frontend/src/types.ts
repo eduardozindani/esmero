@@ -15,16 +15,32 @@ export interface Project {
   updatedAt: number
 }
 
-export interface AgentRequest {
-  canvasContent: string
-  selectedText?: string
-  userMessage: string
+// Agent Message Type
+export interface Message {
+  id: string
+  role: 'user' | 'agent'
+  content: string
+  timestamp: number
 }
 
+// Agent Request (sent to backend)
+export interface AgentRequest {
+  userMessage: string
+  conversationHistory: Message[]
+  canvasContent: string
+  selectedText?: string
+  currentDocumentId?: string
+  currentProjectId?: string
+  documents: Document[]
+}
+
+// Agent Response (received from backend)
 export interface AgentResponse {
-  message?: string
+  message: string
   diff?: {
     oldText: string
     newText: string
+    explanation: string
   }
+  reasoning?: string  // For debugging
 }

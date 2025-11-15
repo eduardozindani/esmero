@@ -1,3 +1,5 @@
+import type { AgentRequest, AgentResponse } from '../types'
+
 const API_BASE_URL = 'http://localhost:3001'
 
 interface GenerateTitleResponse {
@@ -33,5 +35,27 @@ export const generateTitle = async (content: string): Promise<string> => {
   } catch (error) {
     console.error('Error generating title:', error)
     return 'Untitled'
+  }
+}
+
+export const sendAgentMessage = async (request: AgentRequest): Promise<AgentResponse> => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/agent`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(request),
+    })
+
+    if (!response.ok) {
+      throw new Error('Failed to get agent response')
+    }
+
+    const data: AgentResponse = await response.json()
+    return data
+  } catch (error) {
+    console.error('Error sending agent message:', error)
+    throw error
   }
 }

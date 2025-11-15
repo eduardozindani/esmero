@@ -154,6 +154,18 @@ function App() {
     setDocuments(updatedDocuments)
   }
 
+  const handleApplyDiff = (diff: { oldText: string; newText: string; explanation: string }) => {
+    // Replace oldText with newText in canvas content
+    if (canvasContent.includes(diff.oldText)) {
+      const updatedContent = canvasContent.replace(diff.oldText, diff.newText)
+      setCanvasContent(updatedContent)
+    } else {
+      console.warn('Could not find oldText in canvas content. Appending newText instead.')
+      // If exact match not found, append the new text
+      setCanvasContent(canvasContent + '\n\n' + diff.newText)
+    }
+  }
+
   return (
     <div className="h-screen flex">
       <LeftSidebar
@@ -179,6 +191,11 @@ function App() {
         isExpanded={rightSidebarExpanded}
         onToggle={() => setRightSidebarExpanded(!rightSidebarExpanded)}
         selectedText={selectedText}
+        canvasContent={canvasContent}
+        currentDocumentId={currentDocumentId}
+        currentProjectId={currentProjectId}
+        documents={documents}
+        onApplyDiff={handleApplyDiff}
       />
     </div>
   )
