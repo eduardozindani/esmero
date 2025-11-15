@@ -12,6 +12,13 @@ export async function executeAgent(context: Context): Promise<AgentExecutionResu
     // Step 1: Build prompts from context
     const promptContext = buildPrompts(context)
 
+    // Debug: Log what we're sending to the LLM
+    console.log('\n=== PROMPT BEING SENT TO LLM ===')
+    console.log('System Prompt:', promptContext.systemPrompt.slice(0, 200) + '...')
+    console.log('\nUser Prompt:')
+    console.log(promptContext.userPrompt)
+    console.log('=== END PROMPT ===\n')
+
     // Step 2: Call LLM with structured schema
     // Note: AI Chef runs intelligence extraction in parallel here
     // We skip for MVP (can add later)

@@ -38,8 +38,11 @@ export interface AgentRequest {
 export interface AgentResponse {
   message: string
   diff?: {
-    oldText: string
-    newText: string
+    chunks: Array<{
+      oldText: string
+      newText: string
+      explanation: string
+    }>
     explanation: string
   }
   reasoning?: string  // For debugging

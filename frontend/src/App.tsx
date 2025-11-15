@@ -17,6 +17,12 @@ function App() {
   const [selectedText, setSelectedText] = useState<string | null>(null)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(false)
   const [rightSidebarExpanded, setRightSidebarExpanded] = useState(false)
+  const [pendingDiffChunks, setPendingDiffChunks] = useState<Array<{
+    id: string
+    oldText: string
+    newText: string
+    explanation: string
+  }> | null>(null)
 
   // Track pending title generation to prevent race conditions
   const titleGenerationRef = useRef<string | null>(null)
@@ -154,16 +160,31 @@ function App() {
     setDocuments(updatedDocuments)
   }
 
-  const handleApplyDiff = (diff: { oldText: string; newText: string; explanation: string }) => {
-    // Replace oldText with newText in canvas content
-    if (canvasContent.includes(diff.oldText)) {
-      const updatedContent = canvasContent.replace(diff.oldText, diff.newText)
-      setCanvasContent(updatedContent)
-    } else {
-      console.warn('Could not find oldText in canvas content. Appending newText instead.')
-      // If exact match not found, append the new text
-      setCanvasContent(canvasContent + '\n\n' + diff.newText)
-    }
+  const handleAcceptChunk = (chunkId: string) => {
+    if (!pendingDiffChunks) return
+
+    const chunk = pendingDiffChunks.find(c => c.id === chunkId)
+    if (!chunk) return
+
+    // Apply the change
+    const updatedContent = canvasContent.replace(chunk.oldText, chunk.newText)
+    setCanvasContent(updatedContent)
+
+    // Remove this chunk from pending
+    const remaining = pendingDiffChunks.filter(c => c.id !== chunkId)
+    setPendingDiffChunks(remaining.length > 0 ? remaining : null)
+  }
+
+  const handleRejectChunk = (chunkId: string) => {
+    if (!pendingDiffChunks) return
+
+    // Remove this chunk from pending
+    const remaining = pendingDiffChunks.filter(c => c.id !== chunkId)
+    setPendingDiffChunks(remaining.length > 0 ? remaining : null)
+  }
+
+  const handleRejectAllDiffs = () => {
+    setPendingDiffChunks(null)
   }
 
   return (
@@ -186,6 +207,10 @@ function App() {
         onChange={setCanvasContent}
         onSelectionChange={setSelectedText}
         onSave={handleSaveDocument}
+        pendingDiffChunks={pendingDiffChunks}
+        onAcceptChunk={handleAcceptChunk}
+        onRejectChunk={handleRejectChunk}
+        onRejectAllDiffs={handleRejectAllDiffs}
       />
       <RightSidebar
         isExpanded={rightSidebarExpanded}
@@ -195,7 +220,7 @@ function App() {
         currentDocumentId={currentDocumentId}
         currentProjectId={currentProjectId}
         documents={documents}
-        onApplyDiff={handleApplyDiff}
+        onDiffReceived={setPendingDiffChunks}
       />
     </div>
   )

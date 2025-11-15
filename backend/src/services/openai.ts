@@ -11,11 +11,11 @@ export const generateTitleFromContent = async (content: string): Promise<string>
       messages: [
         {
           role: 'system',
-          content: 'You are a helpful assistant that generates short, clean titles for text content. Generate a title that is maximum 5 words. Return only the title, nothing else.',
+          content: 'Extract the fundamental essence. Distill to pure meaning. 2-4 words maximum.',
         },
         {
           role: 'user',
-          content: `Generate a title for this text:\n\n${content}`,
+          content,
         },
       ],
       max_tokens: 20,

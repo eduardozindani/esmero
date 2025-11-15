@@ -13,13 +13,31 @@ export async function handleAgentRequest(
     console.log('Agent request received:', {
       userMessage: request.userMessage.slice(0, 100),
       hasSelection: !!request.selectedText,
+      hasCanvasContent: !!request.canvasContent,
+      canvasLength: request.canvasContent?.length || 0,
       currentDocId: request.currentDocumentId,
       documentsCount: request.documents.length
     })
 
+    // IMPORTANT: Add current user message to conversation history
+    // The frontend sends previous messages in conversationHistory,
+    // but the CURRENT message needs to be included for context
+    const fullConversationHistory = [
+      ...request.conversationHistory,
+      {
+        id: `user-${Date.now()}`,
+        role: 'user' as const,
+        content: request.userMessage,
+        timestamp: Date.now()
+      }
+    ]
+
     // Step 1: Determine context (parallel execution)
     console.log('Determining context...')
-    const context = await determineContext(request)
+    const context = await determineContext({
+      ...request,
+      conversationHistory: fullConversationHistory
+    })
 
     // Step 2: Execute agent
     console.log('Executing agent...')

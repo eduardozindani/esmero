@@ -92,10 +92,13 @@ export const AgentResponseSchema = z.object({
   reasoning: z.string().describe('Internal thinking process about the request'),
   response: z.string().describe('Text response to the user'),
   diff: z.object({
-    oldText: z.string().describe('Text to be replaced in the canvas'),
-    newText: z.string().describe('New text to replace with'),
-    explanation: z.string().describe('Explanation of why this change is suggested')
-  }).nullish().describe('Suggested edit to canvas content, null or omit if no edit needed')
+    chunks: z.array(z.object({
+      oldText: z.string().describe('Exact text from canvas to be replaced'),
+      newText: z.string().describe('New text to replace with'),
+      explanation: z.string().describe('Why this specific change is needed')
+    })).describe('Array of text chunks to replace - each chunk is independent'),
+    explanation: z.string().describe('Overall explanation of all the changes')
+  }).nullish().describe('Suggested edits to canvas content as chunks. Return null if no edits needed. Each chunk shows old → new text with red/green diff.')
 })
 
 export type AgentResponse = z.infer<typeof AgentResponseSchema>
@@ -107,8 +110,11 @@ export type AgentResponse = z.infer<typeof AgentResponseSchema>
 export interface AgentExecutionResult {
   response: string
   diff: {
-    oldText: string
-    newText: string
+    chunks: Array<{
+      oldText: string
+      newText: string
+      explanation: string
+    }>
     explanation: string
   } | null
   reasoning: string

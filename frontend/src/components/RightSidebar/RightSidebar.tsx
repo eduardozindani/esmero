@@ -13,7 +13,7 @@ interface RightSidebarProps {
   currentDocumentId: string | null
   currentProjectId: string | null
   documents: Document[]
-  onApplyDiff: (diff: { oldText: string; newText: string; explanation: string }) => void
+  onDiffReceived: (chunks: Array<{ id: string; oldText: string; newText: string; explanation: string }> | null) => void
 }
 
 function RightSidebar({
@@ -24,12 +24,11 @@ function RightSidebar({
   currentDocumentId,
   currentProjectId,
   documents,
-  onApplyDiff
+  onDiffReceived
 }: RightSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
-  const [pendingDiff, setPendingDiff] = useState<{ oldText: string; newText: string; explanation: string } | null>(null)
 
   useEffect(() => {
     // Reset triggers when expansion state changes
@@ -83,9 +82,13 @@ function RightSidebar({
         )
       )
 
-      // Store diff if provided
-      if (agentResponse.diff) {
-        setPendingDiff(agentResponse.diff)
+      // Send diff chunks to parent if provided
+      if (agentResponse.diff && agentResponse.diff.chunks && agentResponse.diff.chunks.length > 0) {
+        const chunksWithIds = agentResponse.diff.chunks.map((chunk, index) => ({
+          id: `chunk-${Date.now()}-${index}`,
+          ...chunk
+        }))
+        onDiffReceived(chunksWithIds)
       }
     } catch (error) {
       console.error('Error sending agent message:', error)
@@ -103,13 +106,6 @@ function RightSidebar({
             : msg
         )
       )
-    }
-  }
-
-  const handleApplyDiff = () => {
-    if (pendingDiff) {
-      onApplyDiff(pendingDiff)
-      setPendingDiff(null)
     }
   }
 
@@ -142,7 +138,7 @@ function RightSidebar({
         className={`
           bg-gray-50 border-l border-gray-200 relative flex flex-col
           transition-all duration-300 ease-in-out
-          ${isExpanded ? 'w-80' : 'w-0 overflow-hidden border-0'}
+          ${isExpanded ? 'w-96' : 'w-0 overflow-hidden border-0'}
         `}
       >
         {isExpanded && (
@@ -169,26 +165,6 @@ function RightSidebar({
 
             {/* Conversation */}
             <ConversationDisplay messages={messages} />
-
-            {/* Pending Diff Display */}
-            {pendingDiff && (
-              <div className="border-t border-gray-200 p-4 bg-blue-50">
-                <p className="text-sm font-semibold text-gray-800 mb-2">Suggested Edit:</p>
-                <p className="text-xs text-gray-600 mb-3">{pendingDiff.explanation}</p>
-                <button
-                  onClick={handleApplyDiff}
-                  className="w-full px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-                >
-                  Apply Edit
-                </button>
-                <button
-                  onClick={() => setPendingDiff(null)}
-                  className="w-full px-4 py-1 mt-2 text-sm text-gray-600 hover:text-gray-800 transition"
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
 
             {/* Input Area */}
             <InputArea onSendMessage={handleSendMessage} />

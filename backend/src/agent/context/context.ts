@@ -19,6 +19,7 @@ export async function determineContext(
       // File context: selection + current page + relevant documents
       determineFile({
         selectedText: request.selectedText,
+        canvasContent: request.canvasContent,
         currentDocumentId: request.currentDocumentId,
         currentProjectId: request.currentProjectId,
         documents: request.documents

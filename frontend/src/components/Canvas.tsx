@@ -5,15 +5,34 @@ import Heading from '@tiptap/extension-heading'
 import Bold from '@tiptap/extension-bold'
 import Italic from '@tiptap/extension-italic'
 import FloatingToolbar from './FloatingToolbar'
+import DiffOverlay from './DiffOverlay'
 
 interface CanvasProps {
   content: string
   onChange: (content: string) => void
   onSelectionChange: (selected: string | null) => void
   onSave: () => void
+  pendingDiffChunks: Array<{
+    id: string
+    oldText: string
+    newText: string
+    explanation: string
+  }> | null
+  onAcceptChunk: (chunkId: string) => void
+  onRejectChunk: (chunkId: string) => void
+  onRejectAllDiffs: () => void
 }
 
-function Canvas({ content, onChange, onSelectionChange, onSave }: CanvasProps) {
+function Canvas({
+  content,
+  onChange,
+  onSelectionChange,
+  onSave,
+  pendingDiffChunks,
+  onAcceptChunk,
+  onRejectChunk,
+  onRejectAllDiffs
+}: CanvasProps) {
   const editorRef = useRef<HTMLDivElement>(null)
 
   const editor = useEditor({
@@ -109,6 +128,15 @@ function Canvas({ content, onChange, onSelectionChange, onSave }: CanvasProps) {
     >
       <EditorContent editor={editor} />
       {editor && <FloatingToolbar editor={editor} />}
+      {editor && pendingDiffChunks && pendingDiffChunks.length > 0 && (
+        <DiffOverlay
+          editor={editor}
+          chunks={pendingDiffChunks}
+          onAccept={onAcceptChunk}
+          onReject={onRejectChunk}
+          onRejectAll={onRejectAllDiffs}
+        />
+      )}
     </div>
   )
 }

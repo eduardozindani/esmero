@@ -12,9 +12,10 @@ interface Document {
 }
 
 interface FileContextInput {
-  selectedText?: string
-  currentDocumentId?: string
-  currentProjectId?: string
+  selectedText: string | undefined
+  canvasContent: string  // Live canvas content (HTML)
+  currentDocumentId: string | undefined
+  currentProjectId: string | undefined
   documents: Document[]
 }
 
@@ -26,6 +27,7 @@ export async function determineFile(input: FileContextInput): Promise<FileContex
   try {
     const {
       selectedText,
+      canvasContent,
       currentDocumentId,
       currentProjectId,
       documents
@@ -35,7 +37,7 @@ export async function determineFile(input: FileContextInput): Promise<FileContex
     // Note: These are synchronous, but structured for future async operations
     const [selection, currentPage, projectDocuments] = await Promise.all([
       Promise.resolve(getCurrentSelection(selectedText)),
-      Promise.resolve(getCurrentPage(currentDocumentId, documents)),
+      Promise.resolve(getCurrentPage(canvasContent, currentDocumentId, documents)),
       Promise.resolve(getRelevantDocuments(currentProjectId, currentDocumentId, documents))
     ])
 
