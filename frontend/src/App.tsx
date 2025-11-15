@@ -30,13 +30,14 @@ function App() {
     // Determine document ID
     const docId = isUpdate ? currentDocumentId : generateId('doc')
 
-    // Create or update document
+    // Create or update document with loading state
     const newDoc: Document = isUpdate
       ? {
           ...documents.find(d => d.id === docId)!,
           content,
           updatedAt: now,
-          title: ''
+          title: '',
+          titleLoading: true
         }
       : {
           id: docId,
@@ -45,6 +46,7 @@ function App() {
           createdAt: now,
           updatedAt: now,
           projectId: currentProjectId,
+          titleLoading: true
         }
 
     // Update documents array (single update)
@@ -65,7 +67,7 @@ function App() {
     // Only update if this is still the most recent save
     if (titleGenerationRef.current === docId) {
       const finalDocuments = updatedDocuments.map(doc =>
-        doc.id === docId ? { ...doc, title } : doc
+        doc.id === docId ? { ...doc, title, titleLoading: false } : doc
       )
       setDocuments(finalDocuments)
       titleGenerationRef.current = null
@@ -77,7 +79,16 @@ function App() {
     if (doc) {
       setCanvasContent(doc.content)
       setCurrentDocumentId(doc.id)
+      // Sync project context to match the document's project
+      setCurrentProjectId(doc.projectId)
     }
+  }
+
+  const handleProjectClick = (projectId: string | null) => {
+    // Clear canvas and document when switching project context
+    setCanvasContent('')
+    setCurrentDocumentId(null)
+    setCurrentProjectId(projectId)
   }
 
   const handleCreateProject = (name: string) => {
@@ -90,6 +101,9 @@ function App() {
     }
 
     setProjects([...projects, newProject])
+    // Clear canvas and set new project context
+    setCanvasContent('')
+    setCurrentDocumentId(null)
     setCurrentProjectId(newProject.id)
   }
 
@@ -113,7 +127,7 @@ function App() {
         currentProjectId={currentProjectId}
         onDocumentClick={handleLoadDocument}
         onCreateProject={handleCreateProject}
-        onProjectClick={setCurrentProjectId}
+        onProjectClick={handleProjectClick}
         onUpdateProjectName={handleUpdateProjectName}
       />
       <Canvas

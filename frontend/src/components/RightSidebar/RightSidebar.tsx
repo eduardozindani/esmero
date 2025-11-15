@@ -22,21 +22,34 @@ function RightSidebar({ isExpanded, onToggle, selectedText }: RightSidebarProps)
 
   const handleSendMessage = (content: string) => {
     const userMessage: Message = {
+      id: `user-${Date.now()}`,
       role: 'user',
       content,
       timestamp: Date.now()
     }
     setMessages(prev => [...prev, userMessage])
 
+    // Add loading placeholder for agent response
+    const loadingMessageId = `agent-${Date.now()}`
+    const loadingMessage: Message = {
+      id: loadingMessageId,
+      role: 'agent',
+      content: '',
+      timestamp: Date.now(),
+      isLoading: true
+    }
+    setMessages(prev => [...prev, loadingMessage])
+
     // TODO: Send to backend and get agent response
     // For now, mock response
     setTimeout(() => {
-      const agentMessage: Message = {
-        role: 'agent',
-        content: 'This is a mock response. Backend integration pending.',
-        timestamp: Date.now()
-      }
-      setMessages(prev => [...prev, agentMessage])
+      setMessages(prev =>
+        prev.map(msg =>
+          msg.id === loadingMessageId
+            ? { ...msg, content: 'This is a mock response. Backend integration pending.', isLoading: false }
+            : msg
+        )
+      )
     }, 500)
   }
 

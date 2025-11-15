@@ -1,4 +1,5 @@
 import type { Message } from './types'
+import TypingIndicator from './TypingIndicator'
 
 interface MessageBubbleProps {
   message: Message
@@ -12,11 +13,17 @@ function MessageBubble({ message }: MessageBubbleProps) {
       <div
         className={`inline-block max-w-[80%] px-4 py-2 rounded-lg ${
           isUser
-            ? 'bg-blue-500 text-white'
+            ? 'bg-gray-900 text-white'
             : 'bg-gray-200 text-gray-800'
         }`}
       >
-        <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+        {message.isLoading ? (
+          <TypingIndicator />
+        ) : message.error ? (
+          <p className="text-sm text-red-600">{message.error}</p>
+        ) : (
+          <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
+        )}
       </div>
     </div>
   )

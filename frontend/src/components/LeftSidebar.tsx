@@ -73,9 +73,9 @@ function LeftSidebar({
       {/* Expanded state: full sidebar */}
       <div
         className={`
-          bg-gray-50 border-r border-gray-200 p-4 relative
+          bg-gray-50 border-r border-gray-200 relative flex flex-col
           transition-all duration-300 ease-in-out
-          ${isExpanded ? 'w-64' : 'w-0 overflow-hidden p-0 border-0'}
+          ${isExpanded ? 'w-64' : 'w-0 overflow-hidden border-0'}
         `}
       >
         {isExpanded && (
@@ -100,7 +100,7 @@ function LeftSidebar({
               </div>
             </div>
 
-            <div className="flex flex-col h-full">
+            <div className="flex flex-col h-full p-4">
               {/* New Project - only show when NOT in a project */}
               {!currentProjectId && (
                 <div className="mb-4">
@@ -109,7 +109,6 @@ function LeftSidebar({
                     className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer transition"
                   >
                     <span className="flex-shrink-0 text-gray-600 text-sm">+</span>
-                    <FolderClosed className="flex-shrink-0 text-gray-600" />
                     <p className="text-sm text-gray-600 font-bold">New Project</p>
                   </div>
                 </div>
@@ -120,15 +119,6 @@ function LeftSidebar({
                 <div className="mb-4">
                   {editingProjectName ? (
                     <div className="flex items-center gap-2 w-full min-w-0">
-                      <span
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          onProjectClick(null)
-                        }}
-                        className="flex-shrink-0 text-gray-600 cursor-pointer hover:text-gray-800 transition"
-                      >
-                        ←
-                      </span>
                       <FolderOpen className="flex-shrink-0 text-gray-600" />
                       <input
                         type="text"
@@ -202,9 +192,13 @@ function LeftSidebar({
                     className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
                   >
                     <DocumentIcon className="flex-shrink-0 text-gray-600" />
-                    <p className="text-sm text-gray-800 truncate">
-                      {doc.title || 'Untitled'}
-                    </p>
+                    {doc.titleLoading ? (
+                      <div className="flex-1 h-4 bg-gray-300 rounded animate-pulse" />
+                    ) : (
+                      <p className="text-sm text-gray-800 truncate animate-fadeIn">
+                        {doc.title}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

@@ -54,6 +54,16 @@ function Canvas({ content, onChange, onSelectionChange, onSave }: CanvasProps) {
     }
   }, [content, editor])
 
+  // Auto-focus editor only on initial mount
+  useEffect(() => {
+    if (editor) {
+      // Focus editor at the end on mount
+      editor.commands.focus('end')
+    }
+    // Only run on mount when editor is created
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor])
+
   // Keyboard shortcuts
   useEffect(() => {
     if (!editor) return
@@ -87,8 +97,20 @@ function Canvas({ content, onChange, onSelectionChange, onSave }: CanvasProps) {
     }
   }, [editor, onSave])
 
+  // Click anywhere in canvas to focus editor
+  const handleCanvasClick = () => {
+    if (editor && !editor.isFocused) {
+      // Just focus without moving cursor - let native click behavior work
+      editor.commands.focus()
+    }
+  }
+
   return (
-    <div ref={editorRef} className="flex-1 bg-white relative">
+    <div
+      ref={editorRef}
+      className="flex-1 bg-white relative cursor-text"
+      onClick={handleCanvasClick}
+    >
       <EditorContent editor={editor} />
       {editor && <FloatingToolbar editor={editor} />}
     </div>

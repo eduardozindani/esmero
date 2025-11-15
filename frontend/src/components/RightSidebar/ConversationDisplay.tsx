@@ -20,8 +20,8 @@ function ConversationDisplay({ messages }: ConversationDisplayProps) {
           Start a conversation with the agent
         </p>
       ) : (
-        messages.map((message, index) => (
-          <MessageBubble key={index} message={message} />
+        messages.map((message) => (
+          <MessageBubble key={message.id} message={message} />
         ))
       )}
       <div ref={bottomRef} />

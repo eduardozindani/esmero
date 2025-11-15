@@ -1,5 +1,8 @@
 export interface Message {
+  id: string
   role: 'user' | 'agent'
   content: string
   timestamp: number
+  isLoading?: boolean
+  error?: string
 }

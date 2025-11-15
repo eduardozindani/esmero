@@ -5,6 +5,7 @@ export interface Document {
   createdAt: number
   updatedAt: number
   projectId: string | null
+  titleLoading?: boolean
 }
 
 export interface Project {

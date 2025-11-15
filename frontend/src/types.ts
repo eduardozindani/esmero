@@ -3,6 +3,16 @@ export interface Document {
   title: string
   content: string
   createdAt: number
+  updatedAt: number
+  projectId: string | null
+  titleLoading?: boolean
+}
+
+export interface Project {
+  id: string
+  name: string
+  createdAt: number
+  updatedAt: number
 }
 
 export interface AgentRequest {
