@@ -101,27 +101,17 @@ function LeftSidebar({
             </div>
 
             <div className="flex flex-col h-full">
-              {/* Header - only show New Project button when NOT in a project */}
+              {/* New Project - only show when NOT in a project */}
               {!currentProjectId && (
                 <div className="mb-4">
-                  <button
+                  <div
                     onClick={() => onCreateProject('New Project')}
-                    className="w-full text-sm bg-gray-800 text-white px-3 py-2 rounded hover:bg-gray-700 transition"
+                    className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer transition"
                   >
-                    + New Project
-                  </button>
-                </div>
-              )}
-
-              {/* Back button when inside a project */}
-              {currentProjectId && (
-                <div className="mb-4">
-                  <button
-                    onClick={() => onProjectClick(null)}
-                    className="w-full text-sm text-gray-600 px-3 py-2 rounded hover:bg-gray-200 transition text-left"
-                  >
-                    ← Back to All
-                  </button>
+                    <span className="flex-shrink-0 text-gray-600 text-sm">+</span>
+                    <FolderClosed className="flex-shrink-0 text-gray-600" />
+                    <p className="text-sm text-gray-600 font-bold">New Project</p>
+                  </div>
                 </div>
               )}
 
@@ -129,7 +119,16 @@ function LeftSidebar({
               {currentProjectId && (
                 <div className="mb-4">
                   {editingProjectName ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 w-full min-w-0">
+                      <span
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onProjectClick(null)
+                        }}
+                        className="flex-shrink-0 text-gray-600 cursor-pointer hover:text-gray-800 transition"
+                      >
+                        ←
+                      </span>
                       <FolderOpen className="flex-shrink-0 text-gray-600" />
                       <input
                         type="text"
@@ -145,24 +144,32 @@ function LeftSidebar({
                         }}
                         onBlur={() => setEditingProjectName(false)}
                         autoFocus
-                        className="flex-1 text-lg font-bold px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
+                        className="flex-1 min-w-0 text-lg font-bold px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
                       />
                     </div>
                   ) : (
-                    <div
-                      onClick={() => {
-                        const project = projects.find(p => p.id === currentProjectId)
-                        if (project) {
-                          setEditedName(project.name)
-                          setEditingProjectName(true)
-                        }
-                      }}
-                      className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition"
-                    >
-                      <FolderOpen className="flex-shrink-0 text-gray-600" />
-                      <h2 className="text-lg font-bold truncate">
-                        {projects.find(p => p.id === currentProjectId)?.name || 'Untitled'}
-                      </h2>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        onClick={() => onProjectClick(null)}
+                        className="flex-shrink-0 text-gray-600 cursor-pointer hover:text-gray-800 transition px-2 py-1"
+                      >
+                        ←
+                      </span>
+                      <div
+                        onClick={() => {
+                          const project = projects.find(p => p.id === currentProjectId)
+                          if (project) {
+                            setEditedName(project.name)
+                            setEditingProjectName(true)
+                          }
+                        }}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition flex-1 min-w-0"
+                      >
+                        <FolderOpen className="flex-shrink-0 text-gray-600" />
+                        <h2 className="text-lg font-bold truncate">
+                          {projects.find(p => p.id === currentProjectId)?.name || 'Untitled'}
+                        </h2>
+                      </div>
                     </div>
                   )}
                 </div>
