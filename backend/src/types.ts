@@ -18,3 +18,11 @@ export interface AgentResponse {
     newText: string
   }
 }
+
+export interface TitleRequest {
+  content: string
+}
+
+export interface TitleResponse {
+  title: string
+}

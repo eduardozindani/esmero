@@ -1,5 +1,7 @@
+import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
+import titleRouter from './routes/title.js'
 import type { AgentRequest, AgentResponse } from './types.js'
 
 const app = express()
@@ -11,6 +13,8 @@ app.use(express.json())
 app.get('/', (req, res) => {
   res.json({ message: 'Backend alive' })
 })
+
+app.use('/api', titleRouter)
 
 app.post('/agent', (req, res) => {
   const request = req.body as AgentRequest

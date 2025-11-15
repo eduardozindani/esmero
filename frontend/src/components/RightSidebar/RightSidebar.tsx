@@ -40,10 +40,6 @@ function RightSidebar({ isExpanded, onToggle, selectedText }: RightSidebarProps)
     }, 500)
   }
 
-  const handleClear = () => {
-    setMessages([])
-  }
-
   return (
     <>
       {/* Collapsed state: hover trigger to open */}
@@ -98,22 +94,11 @@ function RightSidebar({ isExpanded, onToggle, selectedText }: RightSidebarProps)
               </div>
             </div>
 
-            {/* Header */}
-            <div className="p-4 border-b border-gray-200">
-              <p className="text-sm text-gray-500">Agent</p>
-              {selectedText && (
-                <div className="mt-2 text-xs text-gray-400 bg-white p-2 rounded border border-gray-200">
-                  <p className="font-medium mb-1">Selected:</p>
-                  <p className="italic line-clamp-3">{selectedText}</p>
-                </div>
-              )}
-            </div>
-
             {/* Conversation */}
             <ConversationDisplay messages={messages} />
 
             {/* Input Area */}
-            <InputArea onSendMessage={handleSendMessage} onClear={handleClear} />
+            <InputArea onSendMessage={handleSendMessage} />
           </>
         )}
       </div>

@@ -1,11 +1,27 @@
 import { useState, useEffect } from 'react'
+import type { Document, Project } from '../types'
 
 interface LeftSidebarProps {
   isExpanded: boolean
   onToggle: () => void
+  documents: Document[]
+  projects: Project[]
+  currentProjectId: string | null
+  onDocumentClick: (documentId: string) => void
+  onCreateProject: (name: string) => void
+  onProjectClick: (projectId: string | null) => void
 }
 
-function LeftSidebar({ isExpanded, onToggle }: LeftSidebarProps) {
+function LeftSidebar({
+  isExpanded,
+  onToggle,
+  documents,
+  projects,
+  currentProjectId,
+  onDocumentClick,
+  onCreateProject,
+  onProjectClick
+}: LeftSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
 
@@ -14,6 +30,14 @@ function LeftSidebar({ isExpanded, onToggle }: LeftSidebarProps) {
     setShowOpenTrigger(false)
     setShowCloseTrigger(false)
   }, [isExpanded])
+
+  // Filter and sort documents
+  const filteredDocuments = currentProjectId
+    ? documents.filter(doc => doc.projectId === currentProjectId)
+    : documents.filter(doc => doc.projectId === null)
+
+  const sortedDocuments = [...filteredDocuments].sort((a, b) => b.updatedAt - a.updatedAt)
+  const sortedProjects = [...projects].sort((a, b) => b.updatedAt - a.updatedAt)
 
   return (
     <>
@@ -69,7 +93,63 @@ function LeftSidebar({ isExpanded, onToggle }: LeftSidebarProps) {
               </div>
             </div>
 
-            <p className="text-sm text-gray-500">Documents</p>
+            <div className="flex flex-col h-full">
+              {/* Header */}
+              <div className="mb-4">
+                <button
+                  onClick={() => onCreateProject('New Project')}
+                  className="w-full text-sm bg-gray-800 text-white px-3 py-2 rounded hover:bg-gray-700 transition"
+                >
+                  + New Project
+                </button>
+              </div>
+
+              {/* Back button when inside a project */}
+              {currentProjectId && (
+                <div className="mb-4">
+                  <button
+                    onClick={() => onProjectClick(null)}
+                    className="w-full text-sm text-gray-600 px-3 py-2 rounded hover:bg-gray-200 transition text-left"
+                  >
+                    ← Back to All
+                  </button>
+                </div>
+              )}
+
+              {/* Projects Section */}
+              {!currentProjectId && sortedProjects.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-xs text-gray-500 mb-2">PROJECTS</p>
+                  {sortedProjects.map(project => (
+                    <div
+                      key={project.id}
+                      onClick={() => onProjectClick(project.id)}
+                      className="p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
+                    >
+                      <p className="text-sm text-gray-800 font-medium truncate">
+                        {project.name}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Documents Section */}
+              <div className="flex-1 overflow-y-auto">
+                <p className="text-xs text-gray-500 mb-2">DOCUMENTS</p>
+                {sortedDocuments.map(doc => (
+                  <div
+                    key={doc.id}
+                    onClick={() => onDocumentClick(doc.id)}
+                    className="p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
+                  >
+                    <p className="text-sm text-gray-800 truncate">
+                      {doc.title || 'Untitled'}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
           </>
         )}
       </div>
