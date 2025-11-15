@@ -14,6 +14,8 @@ interface LeftSidebarProps {
   onCreateProject: (name: string) => void
   onProjectClick: (projectId: string | null) => void
   onUpdateProjectName: (projectId: string, newName: string) => void
+  onDeleteDocument: (documentId: string) => void
+  onDeleteProject: (projectId: string) => void
 }
 
 function LeftSidebar({
@@ -25,12 +27,37 @@ function LeftSidebar({
   onDocumentClick,
   onCreateProject,
   onProjectClick,
-  onUpdateProjectName
+  onUpdateProjectName,
+  onDeleteDocument,
+  onDeleteProject
 }: LeftSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
   const [editingProjectName, setEditingProjectName] = useState(false)
   const [editedName, setEditedName] = useState('')
+  const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; projectId?: string; documentId?: string } | null>(null)
+
+  const handleDeleteProject = (projectId: string) => {
+    onDeleteProject(projectId)
+    setProjectToDelete(null)
+    setContextMenu(null)
+    // If we're currently in this project, go back to all
+    if (currentProjectId === projectId) {
+      onProjectClick(null)
+    }
+  }
+
+  const handleDeleteDocument = (documentId: string) => {
+    onDeleteDocument(documentId)
+    setContextMenu(null)
+  }
+
+  useEffect(() => {
+    const handleClick = () => setContextMenu(null)
+    window.addEventListener('click', handleClick)
+    return () => window.removeEventListener('click', handleClick)
+  }, [])
 
   useEffect(() => {
     // Reset triggers when expansion state changes
@@ -172,6 +199,11 @@ function LeftSidebar({
                     <div
                       key={project.id}
                       onClick={() => onProjectClick(project.id)}
+                      onContextMenu={(e) => {
+                        e.preventDefault()
+                        e.stopPropagation()
+                        setContextMenu({ x: e.clientX, y: e.clientY, projectId: project.id })
+                      }}
                       className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
                     >
                       <FolderClosed className="flex-shrink-0 text-gray-600" />
@@ -189,6 +221,11 @@ function LeftSidebar({
                   <div
                     key={doc.id}
                     onClick={() => onDocumentClick(doc.id)}
+                    onContextMenu={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      setContextMenu({ x: e.clientX, y: e.clientY, documentId: doc.id })
+                    }}
                     className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
                   >
                     <DocumentIcon className="flex-shrink-0 text-gray-600" />
@@ -202,7 +239,55 @@ function LeftSidebar({
                   </div>
                 ))}
               </div>
+
+              {/* Context Menu */}
+              {contextMenu && (
+                <div
+                  style={{ top: contextMenu.y, left: contextMenu.x }}
+                  className="fixed bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-50"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    onClick={() => {
+                      if (contextMenu.projectId) {
+                        setProjectToDelete(contextMenu.projectId)
+                      } else if (contextMenu.documentId) {
+                        handleDeleteDocument(contextMenu.documentId)
+                      }
+                    }}
+                    className="w-full px-4 py-2 text-sm text-left text-red-600 hover:bg-gray-100 transition"
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
             </div>
+
+            {/* Delete Project Confirmation Modal */}
+            {projectToDelete && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setProjectToDelete(null)}>
+                <div className="bg-white rounded-lg p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
+                  <h3 className="text-lg font-bold mb-2">Delete Project?</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    This will delete "{projects.find(p => p.id === projectToDelete)?.name}" and all {documents.filter(d => d.projectId === projectToDelete).length} document(s) inside.
+                  </p>
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setProjectToDelete(null)}
+                      className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded transition"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => handleDeleteProject(projectToDelete)}
+                      className="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded transition"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>

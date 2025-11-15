@@ -5,6 +5,7 @@ import RightSidebar from './components/RightSidebar/RightSidebar'
 import { useDocuments, useProjects } from './hooks/useLocalStorage'
 import { generateTitle } from './services/api'
 import { generateId } from './utils/id'
+import { extractTextFromHTML, isHTMLEmpty } from './utils/html'
 import type { Document } from './types'
 
 function App() {
@@ -22,10 +23,27 @@ function App() {
 
   const handleSaveDocument = async () => {
     const content = canvasContent.trim()
-    if (content.length === 0) return
+
+    // Issue 2: If canvas is empty (no text content), just do nothing
+    if (isHTMLEmpty(content)) return
 
     const now = Date.now()
     const isUpdate = !!currentDocumentId
+
+    // Issue 1: If loading existing document without changes (compare text, not HTML), just clear canvas
+    if (isUpdate) {
+      const existingDoc = documents.find(d => d.id === currentDocumentId)
+      if (existingDoc) {
+        const currentText = extractTextFromHTML(content)
+        const existingText = extractTextFromHTML(existingDoc.content)
+        if (currentText === existingText) {
+          // No changes made, just clear canvas
+          setCanvasContent('')
+          setCurrentDocumentId(null)
+          return
+        }
+      }
+    }
 
     // Determine document ID
     const docId = isUpdate ? currentDocumentId : generateId('doc')
@@ -117,6 +135,25 @@ function App() {
     setProjects(updatedProjects)
   }
 
+  const handleDeleteDocument = (documentId: string) => {
+    const updatedDocuments = documents.filter(doc => doc.id !== documentId)
+    setDocuments(updatedDocuments)
+    // If we're currently viewing this document, clear the canvas
+    if (currentDocumentId === documentId) {
+      setCanvasContent('')
+      setCurrentDocumentId(null)
+    }
+  }
+
+  const handleDeleteProject = (projectId: string) => {
+    // Delete the project
+    const updatedProjects = projects.filter(p => p.id !== projectId)
+    setProjects(updatedProjects)
+    // Delete all documents in this project
+    const updatedDocuments = documents.filter(doc => doc.projectId !== projectId)
+    setDocuments(updatedDocuments)
+  }
+
   return (
     <div className="h-screen flex">
       <LeftSidebar
@@ -129,6 +166,8 @@ function App() {
         onCreateProject={handleCreateProject}
         onProjectClick={handleProjectClick}
         onUpdateProjectName={handleUpdateProjectName}
+        onDeleteDocument={handleDeleteDocument}
+        onDeleteProject={handleDeleteProject}
       />
       <Canvas
         content={canvasContent}

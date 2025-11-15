@@ -19,9 +19,9 @@ function Canvas({ content, onChange, onSelectionChange, onSave }: CanvasProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: false, // Disable default heading to use custom config
-        bold: false, // Disable to use custom extension
-        italic: false, // Disable to use custom extension
+        heading: false,
+        bold: false,
+        italic: false,
       }),
       Heading.configure({
         levels: [1, 2, 3],
@@ -30,9 +30,10 @@ function Canvas({ content, onChange, onSelectionChange, onSave }: CanvasProps) {
       Italic,
     ],
     content: content,
+    autofocus: 'start',
     editorProps: {
       attributes: {
-        class: 'w-full h-full p-8 focus:outline-none text-gray-800',
+        class: 'w-full focus:outline-none text-gray-800',
         'data-placeholder': 'Start writing...',
       },
     },
@@ -53,16 +54,6 @@ function Canvas({ content, onChange, onSelectionChange, onSave }: CanvasProps) {
       editor.commands.setContent(content)
     }
   }, [content, editor])
-
-  // Auto-focus editor only on initial mount
-  useEffect(() => {
-    if (editor) {
-      // Focus editor at the end on mount
-      editor.commands.focus('end')
-    }
-    // Only run on mount when editor is created
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editor])
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -97,18 +88,23 @@ function Canvas({ content, onChange, onSelectionChange, onSave }: CanvasProps) {
     }
   }, [editor, onSave])
 
-  // Click anywhere in canvas to focus editor
-  const handleCanvasClick = () => {
-    if (editor && !editor.isFocused) {
-      // Just focus without moving cursor - let native click behavior work
-      editor.commands.focus()
+  // Click anywhere to focus editor
+  const handleCanvasClick = (e: React.MouseEvent) => {
+    if (!editor) return
+
+    const target = e.target as HTMLElement
+    const proseMirrorElement = target.closest('.ProseMirror')
+
+    // If click is NOT on ProseMirror content (empty space), focus at end
+    if (!proseMirrorElement) {
+      editor.commands.focus('end')
     }
   }
 
   return (
     <div
       ref={editorRef}
-      className="flex-1 bg-white relative cursor-text"
+      className="flex-1 bg-white relative overflow-y-auto cursor-text min-h-full p-8"
       onClick={handleCanvasClick}
     >
       <EditorContent editor={editor} />
