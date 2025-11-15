@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface RightSidebarProps {
   isExpanded: boolean
@@ -9,6 +9,12 @@ interface RightSidebarProps {
 function RightSidebar({ isExpanded, onToggle, selectedText }: RightSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
+
+  useEffect(() => {
+    // Reset triggers when expansion state changes
+    setShowOpenTrigger(false)
+    setShowCloseTrigger(false)
+  }, [isExpanded])
 
   return (
     <>

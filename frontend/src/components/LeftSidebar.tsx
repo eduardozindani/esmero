@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 interface LeftSidebarProps {
   isExpanded: boolean
@@ -8,6 +8,12 @@ interface LeftSidebarProps {
 function LeftSidebar({ isExpanded, onToggle }: LeftSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
+
+  useEffect(() => {
+    // Reset triggers when expansion state changes
+    setShowOpenTrigger(false)
+    setShowCloseTrigger(false)
+  }, [isExpanded])
 
   return (
     <>
