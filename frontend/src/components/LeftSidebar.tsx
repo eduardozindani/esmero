@@ -31,7 +31,7 @@ function LeftSidebar({ isExpanded, onToggle }: LeftSidebarProps) {
                        h-16 w-8 rounded-r-lg
                        flex items-center justify-center
                        text-gray-600
-                       transition-opacity duration-200 pointer-events-none
+                       transition-opacity duration-300 pointer-events-none
                        ${showOpenTrigger ? 'opacity-100' : 'opacity-0'}`}
           >
             →
@@ -62,7 +62,7 @@ function LeftSidebar({ isExpanded, onToggle }: LeftSidebarProps) {
                            h-16 w-8 rounded-l-lg
                            flex items-center justify-center
                            text-gray-600
-                           transition-opacity duration-200 pointer-events-none
+                           transition-opacity duration-300 pointer-events-none
                            ${showCloseTrigger ? 'opacity-100' : 'opacity-0'}`}
               >
                 ←
