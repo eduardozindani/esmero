@@ -133,13 +133,42 @@ function computeDecorations(
 ): DecorationSet {
   const decorations: Decoration[] = []
 
+  console.log('=== Computing decorations ===')
+  console.log('Document text content:', doc.textContent)
+  console.log('Number of chunks:', chunks.length)
+
   for (const chunk of chunks) {
+    console.log('Processing chunk:', chunk.id)
+    console.log('Looking for oldText:', JSON.stringify(chunk.oldText))
+
+    // Special case: Empty oldText means adding NEW content to canvas
+    if (chunk.oldText === '' || chunk.oldText.trim() === '') {
+      console.log('✓ Empty oldText - adding new content at end of document')
+
+      // Add widget at end of document (or position 1 if doc is empty)
+      const position = doc.content.size > 2 ? doc.content.size - 1 : 1
+      const widget = createDiffWidget(chunk, onAccept, onReject, true) // Pass true for "isAddition"
+
+      decorations.push(
+        Decoration.widget(position, widget, {
+          side: 1
+        })
+      )
+
+      continue
+    }
+
+    // Normal case: Find and replace existing text
     const position = findTextPosition(doc, chunk.oldText)
 
     if (!position) {
-      console.warn(`Could not find text for chunk ${chunk.id}:`, chunk.oldText)
+      console.warn(`❌ Could not find text for chunk ${chunk.id}`)
+      console.warn('Old text:', JSON.stringify(chunk.oldText))
+      console.warn('Document text:', JSON.stringify(doc.textContent.slice(0, 200)))
       continue
     }
+
+    console.log(`✓ Found position for chunk ${chunk.id}:`, position)
 
     // Decoration 1: Highlight old text with red background
     decorations.push(
@@ -150,7 +179,7 @@ function computeDecorations(
     )
 
     // Decoration 2: Widget showing new text and controls
-    const widget = createDiffWidget(chunk, onAccept, onReject)
+    const widget = createDiffWidget(chunk, onAccept, onReject, false) // Pass false for "isAddition"
     decorations.push(
       Decoration.widget(position.to, widget, {
         side: 1, // Position after the old text
@@ -158,6 +187,7 @@ function computeDecorations(
     )
   }
 
+  console.log('Total decorations created:', decorations.length)
   return DecorationSet.create(doc, decorations)
 }
 
@@ -167,27 +197,44 @@ function computeDecorations(
 function createDiffWidget(
   chunk: DiffChunk,
   onAccept: (id: string) => void,
-  onReject: (id: string) => void
+  onReject: (id: string) => void,
+  isAddition: boolean = false // True when adding new content (no oldText)
 ): HTMLElement {
-  const container = document.createElement('span')
+  const container = document.createElement('div')
   container.className = 'diff-widget'
   container.contentEditable = 'false' // Make it non-editable
-  container.style.cssText = `
-    display: inline-block;
-    margin: 0 4px;
-    vertical-align: baseline;
-  `
+  container.style.cssText = isAddition
+    ? `
+      display: block;
+      margin: 8px 0;
+      padding: 8px;
+      background-color: #f0fdf4;
+      border-left: 3px solid #16a34a;
+      border-radius: 4px;
+    `
+    : `
+      display: inline-block;
+      margin: 0 4px;
+      vertical-align: baseline;
+    `
 
   // New text (green)
   const newText = document.createElement('span')
   newText.className = 'diff-addition'
   newText.textContent = chunk.newText
-  newText.style.cssText = `
-    background-color: #bbf7d0;
-    padding: 2px 4px;
-    border-radius: 2px;
-    margin-right: 4px;
-  `
+  newText.style.cssText = isAddition
+    ? `
+      display: block;
+      color: #166534;
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+    `
+    : `
+      background-color: #bbf7d0;
+      padding: 2px 4px;
+      border-radius: 2px;
+      margin-right: 4px;
+    `
 
   // Controls container
   const controls = document.createElement('span')

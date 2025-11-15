@@ -14,47 +14,43 @@ export function getCurrentPage(
   currentDocumentId: string | undefined,
   documents: Document[]
 ): { id: string; title: string; content: string } | null {
-  // If canvas has content, use that (it's what the user is actively editing)
-  if (canvasContent && canvasContent.trim().length > 0) {
-    const plainText = extractPlainText(canvasContent)
+  // Extract plain text from canvas content (if any)
+  const canvasPlainText = canvasContent ? extractPlainText(canvasContent) : ''
 
+  // If canvas has content (even if empty), prioritize it
+  if (canvasContent !== undefined && canvasContent !== null) {
     // If there's a current document, use its ID and title
     if (currentDocumentId) {
       const document = documents.find(doc => doc.id === currentDocumentId)
       return {
         id: currentDocumentId,
         title: document?.title || 'Untitled',
-        content: plainText
+        content: canvasPlainText
       }
     }
 
-    // Otherwise, it's a new unsaved document
+    // Otherwise, it's a blank canvas (new document)
     return {
       id: 'new',
-      title: 'New Document',
-      content: plainText
+      title: 'Blank Canvas',
+      content: canvasPlainText
     }
   }
 
-  // Fallback: If canvas is empty, use saved document
-  if (!currentDocumentId) {
-    return null
+  // Fallback: Use saved document only if canvas doesn't exist
+  if (currentDocumentId) {
+    const document = documents.find(doc => doc.id === currentDocumentId)
+    if (document) {
+      return {
+        id: document.id,
+        title: document.title,
+        content: extractPlainText(document.content)
+      }
+    }
   }
 
-  const document = documents.find(doc => doc.id === currentDocumentId)
-
-  if (!document) {
-    return null
-  }
-
-  // Extract plain text from HTML content
-  const plainText = extractPlainText(document.content)
-
-  return {
-    id: document.id,
-    title: document.title,
-    content: plainText
-  }
+  // Last resort: No canvas, no document - return null
+  return null
 }
 
 /**

@@ -3,7 +3,7 @@ import ConversationDisplay from './ConversationDisplay'
 import InputArea from './InputArea'
 import type { Message } from './types'
 import type { Document, Project } from '../../types'
-import { sendAgentMessage } from '../../services/api'
+import { streamAgentMessage } from '../../services/api'
 
 interface RightSidebarProps {
   isExpanded: boolean
@@ -59,42 +59,77 @@ function RightSidebar({
     }
     setMessages(prev => [...prev, loadingMessage])
 
+    // Accumulate chunks as they stream in
+    const accumulatedChunks: Array<{ id: string; oldText: string; newText: string; explanation: string }> = []
+
     try {
-      // Build agent request
-      const agentResponse = await sendAgentMessage({
-        userMessage: content,
-        conversationHistory: messages,
-        canvasContent,
-        selectedText: selectedText || undefined,
-        currentDocumentId: currentDocumentId || undefined,
-        currentProjectId: currentProjectId || undefined,
-        documents,
-        projects
-      })
+      // Stream agent response
+      await streamAgentMessage(
+        {
+          userMessage: content,
+          conversationHistory: messages,
+          canvasContent,
+          selectedText: selectedText || undefined,
+          currentDocumentId: currentDocumentId || undefined,
+          currentProjectId: currentProjectId || undefined,
+          documents,
+          projects
+        },
+        {
+          // Called for each diff chunk as it arrives
+          onChunk: (chunk) => {
+            console.log('Received chunk:', chunk)
+            accumulatedChunks.push(chunk)
 
-      // Update agent message with response
-      setMessages(prev =>
-        prev.map(msg =>
-          msg.id === loadingMessageId
-            ? {
-                ...msg,
-                content: agentResponse.message,
-                isLoading: false
-              }
-            : msg
-        )
+            // Immediately send to parent for progressive rendering
+            onDiffReceived([...accumulatedChunks])
+          },
+
+          // Called when final message text arrives
+          onMessage: (message) => {
+            console.log('Received final message:', message)
+
+            // Update agent message with response
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === loadingMessageId
+                  ? {
+                      ...msg,
+                      content: message,
+                      isLoading: false
+                    }
+                  : msg
+              )
+            )
+          },
+
+          // Called when stream completes
+          onComplete: () => {
+            console.log('Stream completed')
+          },
+
+          // Called on error
+          onError: (error) => {
+            console.error('Streaming error:', error)
+
+            // Update with error message
+            setMessages(prev =>
+              prev.map(msg =>
+                msg.id === loadingMessageId
+                  ? {
+                      ...msg,
+                      content: 'I apologize, but I encountered an error. Please try again.',
+                      isLoading: false,
+                      error: 'Failed to get response'
+                    }
+                  : msg
+              )
+            )
+          }
+        }
       )
-
-      // Send diff chunks to parent if provided
-      if (agentResponse.diff && agentResponse.diff.chunks && agentResponse.diff.chunks.length > 0) {
-        const chunksWithIds = agentResponse.diff.chunks.map((chunk, index) => ({
-          id: `chunk-${Date.now()}-${index}`,
-          ...chunk
-        }))
-        onDiffReceived(chunksWithIds)
-      }
     } catch (error) {
-      console.error('Error sending agent message:', error)
+      console.error('Error streaming agent message:', error)
 
       // Update with error message
       setMessages(prev =>

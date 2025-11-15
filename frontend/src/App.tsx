@@ -166,9 +166,9 @@ function App() {
     const chunk = pendingDiffChunks.find(c => c.id === chunkId)
     if (!chunk) return
 
-    // Apply the change
-    const updatedContent = canvasContent.replace(chunk.oldText, chunk.newText)
-    setCanvasContent(updatedContent)
+    // Note: The actual text replacement happens in Canvas via TipTap editor
+    // This callback is just for state management
+    // Canvas component will handle the editor manipulation
 
     // Remove this chunk from pending
     const remaining = pendingDiffChunks.filter(c => c.id !== chunkId)

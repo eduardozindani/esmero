@@ -4,7 +4,8 @@ import { zodToJsonSchema } from 'zod-to-json-schema'
 import type {
   LLMContext,
   StringCompletionConfig,
-  StructuredCompletionConfig
+  StructuredCompletionConfig,
+  BaseLLMConfig
 } from '../agent/types.js'
 
 // Initialize OpenAI client
