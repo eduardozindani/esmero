@@ -51,5 +51,15 @@ export function formatStructured(
   })
   parts.push('</Recent_Messages>')
 
-  return parts.join('\n')
+  const result = parts.join('\n')
+
+  // Debug logging
+  console.log('\n💬 Formatted Conversation Context:')
+  console.log(`  Message count: ${messages.length}`)
+  console.log(`  Has compressed history: ${!!compressedHistory}`)
+  console.log('  Formatted context:')
+  console.log(result)
+  console.log('')
+
+  return result
 }

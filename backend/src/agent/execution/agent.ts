@@ -32,12 +32,29 @@ export async function executeAgent(context: Context): Promise<AgentExecutionResu
     })
 
     // Step 3: Format result
-    return {
+    const result = {
       response: agentResponse.response,
       diff: agentResponse.diff || null,  // Convert undefined to null for consistency
       reasoning: agentResponse.reasoning,
       promptContext  // Include for debugging
     }
+
+    // Debug: Log agent response
+    console.log('\n🤖 Agent Response:')
+    console.log('  Has diff:', !!result.diff)
+    if (result.diff) {
+      console.log('  Chunks:', result.diff.chunks.length)
+      result.diff.chunks.forEach((chunk, i) => {
+        console.log(`    Chunk ${i + 1}:`)
+        console.log(`      oldText: "${chunk.oldText.slice(0, 50)}${chunk.oldText.length > 50 ? '...' : ''}"`)
+        console.log(`      newText: "${chunk.newText.slice(0, 50)}${chunk.newText.length > 50 ? '...' : ''}"`)
+      })
+    }
+    console.log('  Response:', result.response.slice(0, 100))
+    console.log('  Reasoning:', result.reasoning.slice(0, 100))
+    console.log('')
+
+    return result
   } catch (error) {
     console.error('Error executing agent:', error)
 

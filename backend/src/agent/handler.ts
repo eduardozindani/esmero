@@ -10,13 +10,16 @@ export async function handleAgentRequest(
   request: IncomingAgentRequest
 ): Promise<AgentExecutionResult> {
   try {
-    console.log('Agent request received:', {
+    console.log('\n🚀 Agent request received:', {
       userMessage: request.userMessage.slice(0, 100),
       hasSelection: !!request.selectedText,
       hasCanvasContent: !!request.canvasContent,
       canvasLength: request.canvasContent?.length || 0,
       currentDocId: request.currentDocumentId,
-      documentsCount: request.documents.length
+      currentProjectId: request.currentProjectId,
+      documentsCount: request.documents.length,
+      projectsCount: request.projects?.length || 0,
+      documentTitles: request.documents.map(d => d.title).slice(0, 5).join(', ')
     })
 
     // IMPORTANT: Add current user message to conversation history
@@ -34,6 +37,8 @@ export async function handleAgentRequest(
 
     // Step 1: Determine context (parallel execution)
     console.log('Determining context...')
+    console.log('  Conversation history length:', fullConversationHistory.length)
+    console.log('  Messages:', fullConversationHistory.map(m => `${m.role}: ${m.content.slice(0, 30)}`))
     const context = await determineContext({
       ...request,
       conversationHistory: fullConversationHistory

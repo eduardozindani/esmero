@@ -92,7 +92,7 @@ function Canvas({
   // Global click handler for diff buttons (bypasses TipTap event system)
   useEffect(() => {
     const editorElement = editorRef.current
-    if (!editorElement) return
+    if (!editorElement || !editor) return
 
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement
@@ -105,6 +105,34 @@ function Canvas({
           e.preventDefault()
           e.stopPropagation()
           console.log('Accept button clicked:', chunkId)
+
+          // Find the chunk
+          const chunk = pendingDiffChunks?.find(c => c.id === chunkId)
+          if (chunk) {
+            // Apply the change using TipTap editor
+            const docText = editor.state.doc.textContent
+
+            if (chunk.oldText === '' || chunk.oldText.trim() === '') {
+              // Adding new content - insert at end
+              editor.chain().focus('end').insertContent(chunk.newText).run()
+            } else {
+              // Replacing existing text - find and replace
+              const index = docText.indexOf(chunk.oldText)
+              if (index !== -1) {
+                const from = index + 1 // ProseMirror is 1-indexed
+                const to = from + chunk.oldText.length
+
+                // Delete old text and insert new text
+                editor.chain()
+                  .focus()
+                  .deleteRange({ from, to })
+                  .insertContentAt(from, chunk.newText)
+                  .run()
+              }
+            }
+          }
+
+          // Notify parent to remove chunk from state
           onAcceptChunk(chunkId)
           return
         }
@@ -130,7 +158,7 @@ function Canvas({
     return () => {
       editorElement.removeEventListener('click', handleClick, true)
     }
-  }, [onAcceptChunk, onRejectChunk])
+  }, [editor, onAcceptChunk, onRejectChunk, pendingDiffChunks])
 
   // Keyboard shortcuts
   useEffect(() => {

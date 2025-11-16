@@ -51,7 +51,7 @@ export async function determineFile(input: FileContextInput): Promise<FileContex
     ])
 
     // Format into structured text for LLM
-    const structured = formatStructured(selection, currentPage, projectDocuments)
+    const structured = formatStructured(selection, currentPage, projectDocuments, projects)
 
     return {
       currentSelection: selection,

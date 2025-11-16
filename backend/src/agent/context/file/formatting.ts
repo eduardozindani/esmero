@@ -5,7 +5,8 @@
 export function formatStructured(
   selection: string | null,
   currentPage: { id: string; title: string; content: string } | null,
-  relevantDocuments: Array<{ id: string; title: string; content: string }>
+  relevantDocuments: Array<{ id: string; title: string; content: string; projectId: string | null }>,
+  projects: Array<{ id: string; name: string }>
 ): string {
   const parts: string[] = []
 
@@ -39,26 +40,49 @@ export function formatStructured(
   parts.push('</Current_Page>')
   parts.push('')
 
-  // Project Documents (relevant context)
+  // Project Documents (relevant context) - GROUPED BY PROJECT
   parts.push('<Project_Documents>')
   if (relevantDocuments.length > 0) {
-    parts.push(`${relevantDocuments.length} other document(s) in this project:`)
-    parts.push('')
-    relevantDocuments.forEach((doc, index) => {
-      parts.push(`${index + 1}. ${doc.title}`)
-      // Show snippet of content (first 200 chars)
-      const snippet = doc.content.length > 200
-        ? doc.content.slice(0, 200) + '...'
-        : doc.content
-      parts.push(`   ${snippet}`)
+    // Group documents by project
+    const docsByProject = new Map<string | null, typeof relevantDocuments>()
+    relevantDocuments.forEach(doc => {
+      if (!docsByProject.has(doc.projectId)) {
+        docsByProject.set(doc.projectId, [])
+      }
+      docsByProject.get(doc.projectId)!.push(doc)
+    })
+
+    // Display each project's documents
+    docsByProject.forEach((docs, projectId) => {
+      const projectName = projectId
+        ? projects.find(p => p.id === projectId)?.name || 'Unknown Project'
+        : 'Loose Documents'
+
+      parts.push(`## ${projectName}`)
+      parts.push(`${docs.length} document(s):`)
       parts.push('')
+
+      docs.forEach((doc, index) => {
+        parts.push(`${index + 1}. ${doc.title}`)
+        // Show snippet of content (first 200 chars)
+        const snippet = doc.content.length > 200
+          ? doc.content.slice(0, 200) + '...'
+          : doc.content
+        parts.push(`   ${snippet}`)
+        parts.push('')
+      })
     })
   } else {
-    parts.push('No other documents in this project.')
+    parts.push('No other documents available.')
   }
   parts.push('</Project_Documents>')
 
   parts.push('</File_Context>')
 
-  return parts.join('\n')
+  const result = parts.join('\n')
+  console.log('\n📄 Formatted File Context:')
+  console.log(result)
+  console.log('\n')
+
+  return result
 }

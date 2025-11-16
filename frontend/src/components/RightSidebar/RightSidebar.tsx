@@ -64,10 +64,11 @@ function RightSidebar({
 
     try {
       // Stream agent response
+      // NOTE: Backend will add current message to history, so we only send previous messages
       await streamAgentMessage(
         {
           userMessage: content,
-          conversationHistory: messages,
+          conversationHistory: messages,  // Previous messages only (current message excluded)
           canvasContent,
           selectedText: selectedText || undefined,
           currentDocumentId: currentDocumentId || undefined,

@@ -29,6 +29,12 @@ export async function getRelevantDocuments(
   projects: Project[]
 ): Promise<Array<{ id: string; title: string; content: string }>> {
   try {
+    console.log('\n📚 Getting relevant documents:')
+    console.log('  Total documents:', documents.length)
+    console.log('  Current project:', currentProjectId)
+    console.log('  Current document:', currentDocumentId)
+    console.log('  Projects:', projects.length)
+
     // Separate documents into loose (no project) and project-scoped
     const looseDocuments = documents.filter(doc =>
       doc.projectId === null && doc.id !== currentDocumentId
@@ -45,13 +51,22 @@ export async function getRelevantDocuments(
       }
     })
 
+    console.log('  Loose documents:', looseDocuments.length)
+    console.log('  Project documents:', Array.from(documentsByProject.entries()).map(([id, docs]) => `${id}: ${docs.length}`).join(', '))
+
+    // ========================================================================
+    // SPECIAL CASE: If no current project, include ALL projects' documents
+    // This ensures documents are available even when canvas isn't in a project
+    // ========================================================================
+    const projectsToFilter = currentProjectId ? projects.filter(p => p.id === currentProjectId) : projects
+
     // ========================================================================
     // PARALLEL EXECUTION: Filter projects AND loose documents simultaneously
     // ========================================================================
 
     const [relevantProjectIds, relevantLooseDocIds] = await Promise.all([
       // Filter projects (if > 5)
-      filterRelevantProjects(projects, userMessage),
+      filterRelevantProjects(projectsToFilter, userMessage),
 
       // Filter loose documents (if > 5)
       filterRelevantDocuments(
@@ -95,10 +110,14 @@ export async function getRelevantDocuments(
     // Combine and return
     const allRelevantDocs = [...selectedLooseDocs, ...selectedProjectDocs]
 
+    console.log('  ✅ Selected documents:', allRelevantDocs.length)
+    console.log('  Titles:', allRelevantDocs.map(d => d.title).join(', '))
+
     return allRelevantDocs.map(doc => ({
       id: doc.id,
       title: doc.title,
-      content: extractPlainText(doc.content)
+      content: extractPlainText(doc.content),
+      projectId: doc.projectId  // Include project ID so we can show project names
     }))
 
   } catch (error) {
@@ -114,7 +133,8 @@ export async function getRelevantDocuments(
       .map(doc => ({
         id: doc.id,
         title: doc.title,
-        content: extractPlainText(doc.content)
+        content: extractPlainText(doc.content),
+        projectId: doc.projectId
       }))
 
     return fallbackDocs

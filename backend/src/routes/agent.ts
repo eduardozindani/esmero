@@ -77,8 +77,24 @@ router.post('/agent/stream', async (req, res) => {
     res.setHeader('Connection', 'keep-alive')
     res.flushHeaders()
 
+    // IMPORTANT: Add current user message to conversation history
+    // The frontend sends previous messages in conversationHistory,
+    // but the CURRENT message needs to be included for context
+    const fullConversationHistory = [
+      ...request.conversationHistory,
+      {
+        id: `user-${Date.now()}`,
+        role: 'user' as const,
+        content: request.userMessage,
+        timestamp: Date.now()
+      }
+    ]
+
     // Determine context (same as synchronous flow)
-    const context = await determineContext(request)
+    const context = await determineContext({
+      ...request,
+      conversationHistory: fullConversationHistory
+    })
 
     // Build prompts
     const promptContext = buildPrompts(context)

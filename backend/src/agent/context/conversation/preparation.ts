@@ -11,8 +11,13 @@ export function prepareHistory(messages: Message[]): {
 } {
   const MAX_MESSAGES = 14
 
+  console.log('\n📝 Preparing conversation history:')
+  console.log('  Input messages:', messages.length)
+  console.log('  Messages:', messages.map(m => `${m.role}: ${m.content.slice(0, 30)}`))
+
   // If within limit, return all messages
   if (messages.length <= MAX_MESSAGES) {
+    console.log('  Returning all messages (within limit)')
     return {
       recentMessages: messages,
       compressedHistory: undefined
@@ -22,6 +27,8 @@ export function prepareHistory(messages: Message[]): {
   // MVP: Simple truncation (keep last 14)
   // Future: Use LLM to compress older messages like AI Chef
   const recentMessages = messages.slice(-MAX_MESSAGES)
+
+  console.log('  Truncating to last 14 messages')
 
   // Note: For production, implement compressOlderMessages() with LLM
   // const olderMessages = messages.slice(0, -MAX_MESSAGES)
