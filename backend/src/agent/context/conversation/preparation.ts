@@ -7,7 +7,7 @@ import type { Message } from '../../../agent/types.js'
  */
 export function prepareHistory(messages: Message[]): {
   recentMessages: Message[]
-  compressedHistory?: string
+  compressedHistory?: string | undefined
 } {
   const MAX_MESSAGES = 14
 

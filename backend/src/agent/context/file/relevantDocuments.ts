@@ -27,7 +27,7 @@ export async function getRelevantDocuments(
   currentDocumentId: string | undefined,
   documents: Document[],
   projects: Project[]
-): Promise<Array<{ id: string; title: string; content: string }>> {
+): Promise<Array<{ id: string; title: string; content: string; projectId: string | null }>> {
   try {
     console.log('\n📚 Getting relevant documents:')
     console.log('  Total documents:', documents.length)
