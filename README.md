@@ -2,6 +2,8 @@
 
 **Esmero** - From Portuguese, meaning perfection. A distilled writing canvas with an AI agent built from the foundation.
 
+## DEMO: https://youtu.be/IIYGQwrKmtc
+
 ## What is Esmero?
 
 Esmero is a fundamental reimagining of collaborative writing with AI. Not a feature-bloated tool, but a canvas that enables pure expression - where human creativity meets intelligent assistance.
