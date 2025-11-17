@@ -26,6 +26,7 @@ function App() {
     newText: string
     explanation: string
   }> | null>(null)
+  const [focusCanvasTrigger, setFocusCanvasTrigger] = useState(0)
 
   // Track pending title generation to prevent race conditions
   const titleGenerationRef = useRef<string | null>(null)
@@ -41,6 +42,9 @@ function App() {
    */
   const handleSaveDocument = async () => {
     const content = canvasContent.trim()
+    console.log('=== SAVING ===')
+    console.log('Raw canvasContent:', canvasContent)
+    console.log('Trimmed content:', content)
 
     // Don't save empty documents
     if (isHTMLEmpty(content)) return
@@ -48,14 +52,18 @@ function App() {
     const now = Date.now()
     const isUpdate = !!currentDocumentId
 
-    // Check if document actually changed (compare text content, not HTML)
+    // Check if document actually changed (compare text content and folder location)
+    let contentChanged = false
     if (isUpdate) {
       const existingDoc = documents.find(d => d.id === currentDocumentId)
       if (existingDoc) {
         const currentText = extractTextFromHTML(content)
         const existingText = extractTextFromHTML(existingDoc.content)
-        if (currentText === existingText) {
-          // No actual changes - just clear the canvas
+        contentChanged = currentText !== existingText
+        const folderChanged = existingDoc.folderId !== currentFolderId
+
+        if (!contentChanged && !folderChanged) {
+          // No actual changes (content or folder) - just clear the canvas
           setCanvasContent('')
           setCurrentDocumentId(null)
           return
@@ -72,6 +80,7 @@ function App() {
           ...existingDoc,
           content,
           updatedAt: now,
+          folderId: currentFolderId,  // Update folder location - document moves to current context
           // For updates: preserve existing title, no loading state
         }
       : {
@@ -96,64 +105,75 @@ function App() {
     setCanvasContent('')
     setCurrentDocumentId(null)
 
+    // Request canvas focus for new document
+    setFocusCanvasTrigger(prev => prev + 1)
+
     // --- Title Generation (async, non-blocking) ---
+    // Only regenerate title if content changed OR it's a new document
+    const shouldRegenerateTitle = !isUpdate || contentChanged
 
-    // Mark this document as having pending title generation
-    titleGenerationRef.current = docId
+    if (shouldRegenerateTitle) {
+      // Mark this document as having pending title generation
+      titleGenerationRef.current = docId
 
-    // For new documents only: Set timeout to remove skeleton if generation fails
-    const timeoutId = !isUpdate ? setTimeout(() => {
+      // For new documents only: Set timeout to remove skeleton if generation fails
+      const timeoutId = !isUpdate ? setTimeout(() => {
+        if (titleGenerationRef.current === docId) {
+          // Generation timed out - remove loading state
+          setDocuments((prev: Document[]) => prev.map((doc: Document) =>
+            doc.id === docId ? { ...doc, titleLoading: false } : doc
+          ))
+          titleGenerationRef.current = null
+        }
+      }, ANIMATIONS.TITLE_GENERATION_TIMEOUT) : null
+
+      // Generate title with LLM
+      const title = await generateTitle(content)
+
+      // Clear timeout if it exists
+      if (timeoutId) clearTimeout(timeoutId)
+
+      // Only apply title if this is still the most recent generation
+      // (prevents race conditions when multiple saves happen quickly)
       if (titleGenerationRef.current === docId) {
-        // Generation timed out - remove loading state
-        setDocuments(prev => prev.map(doc =>
-          doc.id === docId ? { ...doc, titleLoading: false } : doc
-        ))
+        // Apply new title with fade-in animation flag
+        const finalDocuments = updatedDocuments.map(doc =>
+          doc.id === docId
+            ? { ...doc, title, titleLoading: false, titleJustGenerated: true }
+            : doc
+        )
+        setDocuments(finalDocuments)
         titleGenerationRef.current = null
+
+        // Remove animation flag after animation completes
+        setTimeout(() => {
+          setDocuments((prev: Document[]) => prev.map((doc: Document) =>
+            doc.id === docId ? { ...doc, titleJustGenerated: false } : doc
+          ))
+        }, ANIMATIONS.TITLE_FADE_IN)
       }
-    }, ANIMATIONS.TITLE_GENERATION_TIMEOUT) : null
-
-    // Generate title with LLM
-    const title = await generateTitle(content)
-
-    // Clear timeout if it exists
-    if (timeoutId) clearTimeout(timeoutId)
-
-    // Only apply title if this is still the most recent generation
-    // (prevents race conditions when multiple saves happen quickly)
-    if (titleGenerationRef.current === docId) {
-      // Apply new title with fade-in animation flag
-      const finalDocuments = updatedDocuments.map(doc =>
-        doc.id === docId
-          ? { ...doc, title, titleLoading: false, titleJustGenerated: true }
-          : doc
-      )
-      setDocuments(finalDocuments)
-      titleGenerationRef.current = null
-
-      // Remove animation flag after animation completes
-      setTimeout(() => {
-        setDocuments(prev => prev.map(doc =>
-          doc.id === docId ? { ...doc, titleJustGenerated: false } : doc
-        ))
-      }, ANIMATIONS.TITLE_FADE_IN)
     }
   }
 
   const handleLoadDocument = (documentId: string) => {
     const doc = documents.find(d => d.id === documentId)
     if (doc) {
+      console.log('=== LOADING ===')
+      console.log('Document content:', doc.content)
+      console.log('Content length:', doc.content.length)
       setCanvasContent(doc.content)
       setCurrentDocumentId(doc.id)
-      // Sync folder context to match the document's folder
-      setCurrentFolderId(doc.folderId)
+      // Keep current folder context - document will move to this folder on save
+      // Request canvas focus
+      setFocusCanvasTrigger(prev => prev + 1)
     }
   }
 
   const handleFolderClick = (folderId: string | null) => {
-    // Clear canvas and document when switching folder context
-    setCanvasContent('')
-    setCurrentDocumentId(null)
+    // Update folder context without clearing canvas - content persists across folders
     setCurrentFolderId(folderId)
+    // Request canvas focus
+    setFocusCanvasTrigger(prev => prev + 1)
   }
 
   const handleCreateFolder = (name: string) => {
@@ -166,10 +186,10 @@ function App() {
     }
 
     setFolders([...folders, newFolder])
-    // Clear canvas and set new folder context
-    setCanvasContent('')
-    setCurrentDocumentId(null)
+    // Set new folder context without clearing canvas - content persists
     setCurrentFolderId(newFolder.id)
+    // Request canvas focus
+    setFocusCanvasTrigger(prev => prev + 1)
   }
 
   const handleUpdateFolderName = (folderId: string, newName: string) => {
@@ -254,6 +274,7 @@ function App() {
         onAcceptChunk={handleAcceptChunk}
         onRejectChunk={handleRejectChunk}
         onRejectAllDiffs={handleRejectAllDiffs}
+        focusTrigger={focusCanvasTrigger}
       />
       <RightSidebar
         isExpanded={rightSidebarExpanded}

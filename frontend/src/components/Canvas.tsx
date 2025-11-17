@@ -21,6 +21,7 @@ interface CanvasProps {
   onAcceptChunk: (chunkId: string) => void
   onRejectChunk: (chunkId: string) => void
   onRejectAllDiffs: () => void
+  focusTrigger: number
 }
 
 function Canvas({
@@ -31,7 +32,8 @@ function Canvas({
   pendingDiffChunks,
   onAcceptChunk,
   onRejectChunk,
-  onRejectAllDiffs
+  onRejectAllDiffs,
+  focusTrigger
 }: CanvasProps) {
   const editorRef = useRef<HTMLDivElement>(null)
 
@@ -58,6 +60,21 @@ function Canvas({
       attributes: {
         class: 'w-full focus:outline-none text-gray-800',
         'data-placeholder': 'Start writing...',
+      },
+      handleKeyDown: (view, event) => {
+        // Intercept Enter key at TipTap level (before internal handlers)
+        if (event.key === 'Enter' && !event.shiftKey) {
+          event.preventDefault()
+          const html = view.state.doc.toJSON()
+          const textContent = view.state.doc.textContent
+
+          // Only save if there's actual content
+          if (textContent.trim().length > 0) {
+            onSave()
+          }
+          return true // Handled, don't propagate
+        }
+        return false // Not handled, let TipTap process other keys
       },
     },
     onUpdate: ({ editor }) => {
@@ -88,6 +105,19 @@ function Canvas({
       editor.commands.setDiffChunks([])
     }
   }, [editor, pendingDiffChunks])
+
+  // Focus editor when trigger changes
+  useEffect(() => {
+    if (!editor || focusTrigger === 0) return
+
+    // Get the document and find the last position with actual content
+    const doc = editor.state.doc
+    const lastPos = doc.content.size - 1
+
+    // Focus and set cursor to the very end
+    editor.commands.focus()
+    editor.commands.setTextSelection(lastPos)
+  }, [editor, focusTrigger])
 
   // Global click handler for diff buttons (bypasses TipTap event system)
   useEffect(() => {
@@ -160,7 +190,7 @@ function Canvas({
     }
   }, [editor, onAcceptChunk, onRejectChunk, pendingDiffChunks])
 
-  // Keyboard shortcuts
+  // Keyboard shortcuts for headings
   useEffect(() => {
     if (!editor) return
 
@@ -172,16 +202,6 @@ function Canvas({
         editor.chain().focus().toggleHeading({ level }).run()
         return
       }
-
-      // Enter to save (without Shift)
-      if (e.key === 'Enter' && !e.shiftKey) {
-        const html = editor.getHTML()
-        // Only save if there's content beyond the empty paragraph tags
-        if (html.trim() !== '<p></p>' && html.trim().length > 0) {
-          e.preventDefault()
-          onSave()
-        }
-      }
     }
 
     const editorElement = editorRef.current
@@ -191,7 +211,7 @@ function Canvas({
         editorElement.removeEventListener('keydown', handleKeyDown)
       }
     }
-  }, [editor, onSave])
+  }, [editor])
 
   // Click anywhere to focus editor
   const handleCanvasClick = (e: React.MouseEvent) => {

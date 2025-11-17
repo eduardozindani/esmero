@@ -9,9 +9,17 @@ export const useDocuments = () => {
     setDocuments(loadDocuments())
   }, [])
 
-  const updateDocuments = (newDocuments: Document[]) => {
-    setDocuments(newDocuments)
-    saveDocuments(newDocuments)
+  const updateDocuments = (newDocuments: Document[] | ((prev: Document[]) => Document[])) => {
+    if (typeof newDocuments === 'function') {
+      setDocuments((prev) => {
+        const updated = newDocuments(prev)
+        saveDocuments(updated)
+        return updated
+      })
+    } else {
+      setDocuments(newDocuments)
+      saveDocuments(newDocuments)
+    }
   }
 
   return [documents, updateDocuments] as const
