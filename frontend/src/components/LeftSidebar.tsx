@@ -244,7 +244,11 @@ function LeftSidebar({
                       e.stopPropagation()
                       setContextMenu({ x: e.clientX, y: e.clientY, documentId: doc.id })
                     }}
-                    className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
+                    className={`flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition ${
+                      doc.documentJustCreated ? 'animate-slideIn' : ''
+                    } ${
+                      doc.documentDeleting ? 'animate-slideOut' : ''
+                    }`}
                   >
                     <DocumentIcon className="flex-shrink-0 text-gray-600" />
                     {doc.titleLoading ? (

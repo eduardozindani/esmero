@@ -12,6 +12,7 @@ interface CanvasProps {
   onChange: (content: string) => void
   onSelectionChange: (selected: string | null) => void
   onSave: () => void
+  onDelete: () => void
   pendingDiffChunks: Array<{
     id: string
     oldText: string
@@ -29,6 +30,7 @@ function Canvas({
   onChange,
   onSelectionChange,
   onSave,
+  onDelete,
   pendingDiffChunks,
   onAcceptChunk,
   onRejectChunk,
@@ -65,11 +67,13 @@ function Canvas({
         // Intercept Enter key at TipTap level (before internal handlers)
         if (event.key === 'Enter' && !event.shiftKey) {
           event.preventDefault()
-          const html = view.state.doc.toJSON()
           const textContent = view.state.doc.textContent
 
-          // Only save if there's actual content
-          if (textContent.trim().length > 0) {
+          // If content is empty/whitespace-only, delete the document
+          if (textContent.trim().length === 0) {
+            onDelete()
+          } else {
+            // Otherwise save
             onSave()
           }
           return true // Handled, don't propagate

@@ -91,14 +91,21 @@ function ResizeHandle({
     }
   }, [isResizing, startX, startWidth, side, onResize, onResizeEnd])
 
-  const positionClass = side === 'left'
-    ? `-right-${RESIZE_HANDLE.POSITION_OFFSET}`
-    : `-left-${RESIZE_HANDLE.POSITION_OFFSET}`
+  // Use inline styles for positioning instead of dynamic Tailwind classes
+  // Dynamic template strings don't work with Tailwind JIT compiler
+  // Position the handle so its CENTER aligns with the sidebar edge
+  const halfZoneWidth = RESIZE_HANDLE.HOVER_ZONE_WIDTH / 2
+  const positionStyle = side === 'left'
+    ? { right: `-${halfZoneWidth}px` }
+    : { left: `-${halfZoneWidth}px` }
 
   return (
     <div
-      className={`absolute top-0 h-full z-30 ${positionClass}`}
-      style={{ width: `${RESIZE_HANDLE.HOVER_ZONE_WIDTH}px` }}
+      className="absolute top-0 h-full z-30"
+      style={{
+        width: `${RESIZE_HANDLE.HOVER_ZONE_WIDTH}px`,
+        ...positionStyle
+      }}
       onMouseDown={handleMouseDown}
       onMouseEnter={() => !isResizing && setShowHandle(true)}
       onMouseLeave={() => !isResizing && setShowHandle(false)}
@@ -110,9 +117,7 @@ function ResizeHandle({
       >
         {/* Visual indicator: vertical line that adapts to interaction state */}
         <div
-          className={`h-full transition-all duration-${ANIMATIONS.RESIZE_FEEDBACK} ${
-            side === 'left' ? 'mr-1' : 'ml-1'
-          }`}
+          className="h-full transition-all"
           style={{
             width: isResizing
               ? `${RESIZE_HANDLE.LINE_WIDTH_DRAGGING}px`
@@ -123,7 +128,8 @@ function ResizeHandle({
               ? RESIZE_HANDLE.COLOR_DRAGGING
               : showHandle
                 ? RESIZE_HANDLE.COLOR_HOVER
-                : 'transparent'
+                : 'transparent',
+            transitionDuration: `${ANIMATIONS.RESIZE_FEEDBACK}ms`
           }}
         />
       </div>

@@ -84,14 +84,15 @@ function App() {
           // For updates: preserve existing title, no loading state
         }
       : {
-          // For new documents: start with loading state
+          // For new documents: start with loading and appearance animation
           id: docId,
           content,
           title: '',
           createdAt: now,
           updatedAt: now,
           folderId: currentFolderId,
-          titleLoading: true
+          titleLoading: true,
+          documentJustCreated: true
         }
 
     // Save document immediately
@@ -145,10 +146,10 @@ function App() {
         setDocuments(finalDocuments)
         titleGenerationRef.current = null
 
-        // Remove animation flag after animation completes
+        // Remove animation flags after animation completes
         setTimeout(() => {
           setDocuments((prev: Document[]) => prev.map((doc: Document) =>
-            doc.id === docId ? { ...doc, titleJustGenerated: false } : doc
+            doc.id === docId ? { ...doc, titleJustGenerated: false, documentJustCreated: false } : doc
           ))
         }, ANIMATIONS.TITLE_FADE_IN)
       }
@@ -212,6 +213,28 @@ function App() {
     }
   }
 
+  const handleDeleteCurrentDocument = () => {
+    // Only delete if there's a current document loaded
+    if (currentDocumentId) {
+      // Set deleting flag to trigger animation
+      setDocuments((prev: Document[]) => prev.map((doc: Document) =>
+        doc.id === currentDocumentId ? { ...doc, documentDeleting: true } : doc
+      ))
+
+      // Wait for animation to complete, then actually delete
+      setTimeout(() => {
+        handleDeleteDocument(currentDocumentId)
+        // Canvas is already cleared by handleDeleteDocument
+        // Request canvas focus for new document
+        setFocusCanvasTrigger(prev => prev + 1)
+      }, ANIMATIONS.DOCUMENT_SLIDE_OUT)
+    } else {
+      // No document loaded, just clear the canvas (was typing a new doc)
+      setCanvasContent('')
+      setFocusCanvasTrigger(prev => prev + 1)
+    }
+  }
+
   const handleDeleteFolder = (folderId: string) => {
     // Delete the folder
     const updatedFolders = folders.filter(f => f.id !== folderId)
@@ -270,6 +293,7 @@ function App() {
         onChange={setCanvasContent}
         onSelectionChange={setSelectedText}
         onSave={handleSaveDocument}
+        onDelete={handleDeleteCurrentDocument}
         pendingDiffChunks={pendingDiffChunks}
         onAcceptChunk={handleAcceptChunk}
         onRejectChunk={handleRejectChunk}

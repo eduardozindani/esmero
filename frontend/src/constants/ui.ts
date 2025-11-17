@@ -61,6 +61,12 @@ export const ANIMATIONS = {
 
   // Title generation timeout (in ms)
   TITLE_GENERATION_TIMEOUT: 10000,
+
+  // Document appearance animation (in ms)
+  DOCUMENT_SLIDE_IN: 300,
+
+  // Document deletion animation (in ms)
+  DOCUMENT_SLIDE_OUT: 250,
 } as const
 
 // Local storage keys

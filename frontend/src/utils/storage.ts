@@ -7,6 +7,8 @@ import { STORAGE_KEYS } from '../constants/ui'
  * Ensures animation states don't persist across sessions:
  * - titleLoading: Reset to prevent phantom loading skeletons
  * - titleJustGenerated: Reset to prevent unwanted fade animations
+ * - documentJustCreated: Reset to prevent unwanted slide-in animations
+ * - documentDeleting: Reset to prevent stuck deletion states
  */
 export const loadDocuments = (): Document[] => {
   try {
@@ -18,7 +20,9 @@ export const loadDocuments = (): Document[] => {
       ...doc,
       // Clean up any animation states that shouldn't persist
       titleLoading: false,
-      titleJustGenerated: false
+      titleJustGenerated: false,
+      documentJustCreated: false,
+      documentDeleting: false
     }))
   } catch (error) {
     console.error('Failed to load documents:', error)

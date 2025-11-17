@@ -9,6 +9,8 @@ export interface Document {
   // Animation state flags (never persisted to localStorage)
   titleLoading?: boolean          // Shows skeleton loader during title generation
   titleJustGenerated?: boolean    // Triggers fadeIn animation when title arrives
+  documentJustCreated?: boolean   // Triggers slideIn animation when document is created
+  documentDeleting?: boolean      // Triggers slideOut animation before deletion
 }
 
 export interface Folder {
