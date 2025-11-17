@@ -79,7 +79,7 @@ function LeftSidebar({
       {!isExpanded && (
         <div
           onClick={onToggle}
-          className="fixed left-0 top-0 h-full w-10 z-10 cursor-pointer"
+          className="fixed left-0 top-0 h-full w-20 z-10 cursor-pointer"
           onMouseEnter={() => setShowOpenTrigger(true)}
           onMouseLeave={() => setShowOpenTrigger(false)}
         >
@@ -110,12 +110,12 @@ function LeftSidebar({
             {/* Close trigger strip spanning both sides of division */}
             <div
               onClick={onToggle}
-              className="absolute -right-6 top-0 h-full w-12 z-20 cursor-pointer"
+              className="absolute -right-10 top-0 h-full w-20 z-20 cursor-pointer"
               onMouseEnter={() => setShowCloseTrigger(true)}
               onMouseLeave={() => setShowCloseTrigger(false)}
             >
               <div
-                className={`absolute -left-2 top-1/2 -translate-y-1/2
+                className={`absolute right-10 top-1/2 -translate-y-1/2
                            bg-gray-800/20 backdrop-blur-sm
                            h-16 w-8 rounded-l-lg
                            flex items-center justify-center

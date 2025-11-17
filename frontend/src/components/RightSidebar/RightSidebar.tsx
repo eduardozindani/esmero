@@ -154,7 +154,7 @@ function RightSidebar({
       {!isExpanded && (
         <div
           onClick={onToggle}
-          className="fixed right-0 top-0 h-full w-10 z-10 cursor-pointer"
+          className="fixed right-0 top-0 h-full w-20 z-10 cursor-pointer"
           onMouseEnter={() => setShowOpenTrigger(true)}
           onMouseLeave={() => setShowOpenTrigger(false)}
         >
@@ -185,12 +185,12 @@ function RightSidebar({
             {/* Close trigger strip spanning both sides of division */}
             <div
               onClick={onToggle}
-              className="absolute -left-6 top-0 h-full w-12 z-20 cursor-pointer"
+              className="absolute -left-10 top-0 h-full w-20 z-20 cursor-pointer"
               onMouseEnter={() => setShowCloseTrigger(true)}
               onMouseLeave={() => setShowCloseTrigger(false)}
             >
               <div
-                className={`absolute -right-2 top-1/2 -translate-y-1/2
+                className={`absolute left-10 top-1/2 -translate-y-1/2
                            bg-gray-800/20 backdrop-blur-sm
                            h-16 w-8 rounded-r-lg
                            flex items-center justify-center
