@@ -4,11 +4,11 @@ export interface Document {
   content: string
   createdAt: number
   updatedAt: number
-  projectId: string | null
+  folderId: string | null
   titleLoading?: boolean
 }
 
-export interface Project {
+export interface Folder {
   id: string
   name: string
   createdAt: number
@@ -30,9 +30,9 @@ export interface AgentRequest {
   canvasContent: string
   selectedText?: string
   currentDocumentId?: string
-  currentProjectId?: string
+  currentFolderId?: string
   documents: Document[]
-  projects: Project[]
+  folders: Folder[]
 }
 
 // Agent Response (received from backend)

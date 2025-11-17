@@ -5,8 +5,8 @@
 export function formatStructured(
   selection: string | null,
   currentPage: { id: string; title: string; content: string } | null,
-  relevantDocuments: Array<{ id: string; title: string; content: string; projectId: string | null }>,
-  projects: Array<{ id: string; name: string }>
+  relevantDocuments: Array<{ id: string; title: string; content: string; folderId: string | null }>,
+  folders: Array<{ id: string; name: string }>
 ): string {
   const parts: string[] = []
 
@@ -40,25 +40,25 @@ export function formatStructured(
   parts.push('</Current_Page>')
   parts.push('')
 
-  // Project Documents (relevant context) - GROUPED BY PROJECT
-  parts.push('<Project_Documents>')
+  // Folder Documents (relevant context) - GROUPED BY FOLDER
+  parts.push('<Folder_Documents>')
   if (relevantDocuments.length > 0) {
-    // Group documents by project
-    const docsByProject = new Map<string | null, typeof relevantDocuments>()
+    // Group documents by folder
+    const docsByFolder = new Map<string | null, typeof relevantDocuments>()
     relevantDocuments.forEach(doc => {
-      if (!docsByProject.has(doc.projectId)) {
-        docsByProject.set(doc.projectId, [])
+      if (!docsByFolder.has(doc.folderId)) {
+        docsByFolder.set(doc.folderId, [])
       }
-      docsByProject.get(doc.projectId)!.push(doc)
+      docsByFolder.get(doc.folderId)!.push(doc)
     })
 
-    // Display each project's documents
-    docsByProject.forEach((docs, projectId) => {
-      const projectName = projectId
-        ? projects.find(p => p.id === projectId)?.name || 'Unknown Project'
+    // Display each folder's documents
+    docsByFolder.forEach((docs, folderId) => {
+      const folderName = folderId
+        ? folders.find(f => f.id === folderId)?.name || 'Unknown Folder'
         : 'Loose Documents'
 
-      parts.push(`## ${projectName}`)
+      parts.push(`## ${folderName}`)
       parts.push(`${docs.length} document(s):`)
       parts.push('')
 
@@ -75,7 +75,7 @@ export function formatStructured(
   } else {
     parts.push('No other documents available.')
   }
-  parts.push('</Project_Documents>')
+  parts.push('</Folder_Documents>')
 
   parts.push('</File_Context>')
 

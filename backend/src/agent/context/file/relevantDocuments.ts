@@ -1,13 +1,13 @@
-import { filterRelevantProjects, filterRelevantDocuments } from './relevance.js'
+import { filterRelevantFolders, filterRelevantDocuments } from './relevance.js'
 
 interface Document {
   id: string
   title: string
   content: string
-  projectId: string | null
+  folderId: string | null
 }
 
-interface Project {
+interface Folder {
   id: string
   name: string
 }
@@ -17,56 +17,56 @@ interface Project {
  * Following AI Chef pattern: parallel execution + smart relevance
  *
  * Strategy:
- * 1. Filter projects (if > 5) - parallel
+ * 1. Filter folders (if > 5) - parallel
  * 2. Filter loose documents (if > 5) - parallel with #1
- * 3. For each selected project, filter documents (if > 5) - all parallel
+ * 3. For each selected folder, filter documents (if > 5) - all parallel
  */
 export async function getRelevantDocuments(
   userMessage: string,
-  currentProjectId: string | undefined,
+  currentFolderId: string | undefined,
   currentDocumentId: string | undefined,
   documents: Document[],
-  projects: Project[]
-): Promise<Array<{ id: string; title: string; content: string; projectId: string | null }>> {
+  folders: Folder[]
+): Promise<Array<{ id: string; title: string; content: string; folderId: string | null }>> {
   try {
     console.log('\n📚 Getting relevant documents:')
     console.log('  Total documents:', documents.length)
-    console.log('  Current project:', currentProjectId)
+    console.log('  Current folder:', currentFolderId)
     console.log('  Current document:', currentDocumentId)
-    console.log('  Projects:', projects.length)
+    console.log('  Folders:', folders.length)
 
-    // Separate documents into loose (no project) and project-scoped
+    // Separate documents into loose (no folder) and folder-scoped
     const looseDocuments = documents.filter(doc =>
-      doc.projectId === null && doc.id !== currentDocumentId
+      doc.folderId === null && doc.id !== currentDocumentId
     )
 
-    // Group documents by project
-    const documentsByProject = new Map<string, Document[]>()
+    // Group documents by folder
+    const documentsByFolder = new Map<string, Document[]>()
     documents.forEach(doc => {
-      if (doc.projectId && doc.id !== currentDocumentId) {
-        if (!documentsByProject.has(doc.projectId)) {
-          documentsByProject.set(doc.projectId, [])
+      if (doc.folderId && doc.id !== currentDocumentId) {
+        if (!documentsByFolder.has(doc.folderId)) {
+          documentsByFolder.set(doc.folderId, [])
         }
-        documentsByProject.get(doc.projectId)!.push(doc)
+        documentsByFolder.get(doc.folderId)!.push(doc)
       }
     })
 
     console.log('  Loose documents:', looseDocuments.length)
-    console.log('  Project documents:', Array.from(documentsByProject.entries()).map(([id, docs]) => `${id}: ${docs.length}`).join(', '))
+    console.log('  Folder documents:', Array.from(documentsByFolder.entries()).map(([id, docs]) => `${id}: ${docs.length}`).join(', '))
 
     // ========================================================================
-    // SPECIAL CASE: If no current project, include ALL projects' documents
-    // This ensures documents are available even when canvas isn't in a project
+    // SPECIAL CASE: If no current folder, include ALL folders' documents
+    // This ensures documents are available even when canvas isn't in a folder
     // ========================================================================
-    const projectsToFilter = currentProjectId ? projects.filter(p => p.id === currentProjectId) : projects
+    const foldersToFilter = currentFolderId ? folders.filter(f => f.id === currentFolderId) : folders
 
     // ========================================================================
-    // PARALLEL EXECUTION: Filter projects AND loose documents simultaneously
+    // PARALLEL EXECUTION: Filter folders AND loose documents simultaneously
     // ========================================================================
 
-    const [relevantProjectIds, relevantLooseDocIds] = await Promise.all([
-      // Filter projects (if > 5)
-      filterRelevantProjects(projectsToFilter, userMessage),
+    const [relevantFolderIds, relevantLooseDocIds] = await Promise.all([
+      // Filter folders (if > 5)
+      filterRelevantFolders(foldersToFilter, userMessage),
 
       // Filter loose documents (if > 5)
       filterRelevantDocuments(
@@ -77,23 +77,23 @@ export async function getRelevantDocuments(
     ])
 
     // ========================================================================
-    // PARALLEL EXECUTION: Filter documents within each selected project
+    // PARALLEL EXECUTION: Filter documents within each selected folder
     // ========================================================================
 
-    const projectDocumentFilterPromises = relevantProjectIds.map(async projectId => {
-      const projectDocs = documentsByProject.get(projectId) || []
+    const folderDocumentFilterPromises = relevantFolderIds.map(async folderId => {
+      const folderDocs = documentsByFolder.get(folderId) || []
 
-      // Filter documents within this project (if > 5)
+      // Filter documents within this folder (if > 5)
       const relevantDocIds = await filterRelevantDocuments(
-        projectDocs.map(d => ({ id: d.id, title: d.title })),
+        folderDocs.map(d => ({ id: d.id, title: d.title })),
         userMessage,
-        `documents in project ${projects.find(p => p.id === projectId)?.name || projectId}`
+        `documents in folder ${folders.find(f => f.id === folderId)?.name || folderId}`
       )
 
-      return projectDocs.filter(doc => relevantDocIds.includes(doc.id))
+      return folderDocs.filter(doc => relevantDocIds.includes(doc.id))
     })
 
-    const projectDocumentsArrays = await Promise.all(projectDocumentFilterPromises)
+    const folderDocumentsArrays = await Promise.all(folderDocumentFilterPromises)
 
     // ========================================================================
     // Combine results
@@ -104,11 +104,11 @@ export async function getRelevantDocuments(
       relevantLooseDocIds.includes(doc.id)
     )
 
-    // Flatten project documents
-    const selectedProjectDocs = projectDocumentsArrays.flat()
+    // Flatten folder documents
+    const selectedFolderDocs = folderDocumentsArrays.flat()
 
     // Combine and return
-    const allRelevantDocs = [...selectedLooseDocs, ...selectedProjectDocs]
+    const allRelevantDocs = [...selectedLooseDocs, ...selectedFolderDocs]
 
     console.log('  ✅ Selected documents:', allRelevantDocs.length)
     console.log('  Titles:', allRelevantDocs.map(d => d.title).join(', '))
@@ -117,24 +117,24 @@ export async function getRelevantDocuments(
       id: doc.id,
       title: doc.title,
       content: extractPlainText(doc.content),
-      projectId: doc.projectId  // Include project ID so we can show project names
+      folderId: doc.folderId  // Include folder ID so we can show folder names
     }))
 
   } catch (error) {
     console.error('Error getting relevant documents:', error)
 
-    // Graceful fallback: return first 5 documents from current project
+    // Graceful fallback: return first 5 documents from current folder
     const fallbackDocs = documents
       .filter(doc => {
         if (doc.id === currentDocumentId) return false
-        return doc.projectId === (currentProjectId || null)
+        return doc.folderId === (currentFolderId || null)
       })
       .slice(0, 5)
       .map(doc => ({
         id: doc.id,
         title: doc.title,
         content: extractPlainText(doc.content),
-        projectId: doc.projectId
+        folderId: doc.folderId
       }))
 
     return fallbackDocs

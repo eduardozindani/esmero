@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import LeftSidebar from './components/LeftSidebar'
 import Canvas from './components/Canvas'
 import RightSidebar from './components/RightSidebar/RightSidebar'
-import { useDocuments, useProjects } from './hooks/useLocalStorage'
+import { useDocuments, useFolders } from './hooks/useLocalStorage'
 import { generateTitle } from './services/api'
 import { generateId } from './utils/id'
 import { extractTextFromHTML, isHTMLEmpty } from './utils/html'
@@ -10,9 +10,9 @@ import type { Document } from './types'
 
 function App() {
   const [documents, setDocuments] = useDocuments()
-  const [projects, setProjects] = useProjects()
+  const [folders, setFolders] = useFolders()
   const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(null)
-  const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
+  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [canvasContent, setCanvasContent] = useState('')
   const [selectedText, setSelectedText] = useState<string | null>(null)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(false)
@@ -69,7 +69,7 @@ function App() {
           title: '',
           createdAt: now,
           updatedAt: now,
-          projectId: currentProjectId,
+          folderId: currentFolderId,
           titleLoading: true
         }
 
@@ -103,42 +103,42 @@ function App() {
     if (doc) {
       setCanvasContent(doc.content)
       setCurrentDocumentId(doc.id)
-      // Sync project context to match the document's project
-      setCurrentProjectId(doc.projectId)
+      // Sync folder context to match the document's folder
+      setCurrentFolderId(doc.folderId)
     }
   }
 
-  const handleProjectClick = (projectId: string | null) => {
-    // Clear canvas and document when switching project context
+  const handleFolderClick = (folderId: string | null) => {
+    // Clear canvas and document when switching folder context
     setCanvasContent('')
     setCurrentDocumentId(null)
-    setCurrentProjectId(projectId)
+    setCurrentFolderId(folderId)
   }
 
-  const handleCreateProject = (name: string) => {
+  const handleCreateFolder = (name: string) => {
     const now = Date.now()
-    const newProject = {
-      id: generateId('proj'),
+    const newFolder = {
+      id: generateId('folder'),
       name,
       createdAt: now,
       updatedAt: now,
     }
 
-    setProjects([...projects, newProject])
-    // Clear canvas and set new project context
+    setFolders([...folders, newFolder])
+    // Clear canvas and set new folder context
     setCanvasContent('')
     setCurrentDocumentId(null)
-    setCurrentProjectId(newProject.id)
+    setCurrentFolderId(newFolder.id)
   }
 
-  const handleUpdateProjectName = (projectId: string, newName: string) => {
+  const handleUpdateFolderName = (folderId: string, newName: string) => {
     const now = Date.now()
-    const updatedProjects = projects.map(project =>
-      project.id === projectId
-        ? { ...project, name: newName, updatedAt: now }
-        : project
+    const updatedFolders = folders.map(folder =>
+      folder.id === folderId
+        ? { ...folder, name: newName, updatedAt: now }
+        : folder
     )
-    setProjects(updatedProjects)
+    setFolders(updatedFolders)
   }
 
   const handleDeleteDocument = (documentId: string) => {
@@ -151,12 +151,12 @@ function App() {
     }
   }
 
-  const handleDeleteProject = (projectId: string) => {
-    // Delete the project
-    const updatedProjects = projects.filter(p => p.id !== projectId)
-    setProjects(updatedProjects)
-    // Delete all documents in this project
-    const updatedDocuments = documents.filter(doc => doc.projectId !== projectId)
+  const handleDeleteFolder = (folderId: string) => {
+    // Delete the folder
+    const updatedFolders = folders.filter(f => f.id !== folderId)
+    setFolders(updatedFolders)
+    // Delete all documents in this folder
+    const updatedDocuments = documents.filter(doc => doc.folderId !== folderId)
     setDocuments(updatedDocuments)
   }
 
@@ -193,14 +193,14 @@ function App() {
         isExpanded={leftSidebarExpanded}
         onToggle={() => setLeftSidebarExpanded(!leftSidebarExpanded)}
         documents={documents}
-        projects={projects}
-        currentProjectId={currentProjectId}
+        folders={folders}
+        currentFolderId={currentFolderId}
         onDocumentClick={handleLoadDocument}
-        onCreateProject={handleCreateProject}
-        onProjectClick={handleProjectClick}
-        onUpdateProjectName={handleUpdateProjectName}
+        onCreateFolder={handleCreateFolder}
+        onFolderClick={handleFolderClick}
+        onUpdateFolderName={handleUpdateFolderName}
         onDeleteDocument={handleDeleteDocument}
-        onDeleteProject={handleDeleteProject}
+        onDeleteFolder={handleDeleteFolder}
       />
       <Canvas
         content={canvasContent}
@@ -218,9 +218,9 @@ function App() {
         selectedText={selectedText}
         canvasContent={canvasContent}
         currentDocumentId={currentDocumentId}
-        currentProjectId={currentProjectId}
+        currentFolderId={currentFolderId}
         documents={documents}
-        projects={projects}
+        folders={folders}
         onDiffReceived={setPendingDiffChunks}
       />
     </div>

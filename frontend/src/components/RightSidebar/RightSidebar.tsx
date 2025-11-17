@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import ConversationDisplay from './ConversationDisplay'
 import InputArea from './InputArea'
 import type { Message } from './types'
-import type { Document, Project } from '../../types'
+import type { Document, Folder } from '../../types'
 import { streamAgentMessage } from '../../services/api'
 
 interface RightSidebarProps {
@@ -11,9 +11,9 @@ interface RightSidebarProps {
   selectedText: string | null
   canvasContent: string
   currentDocumentId: string | null
-  currentProjectId: string | null
+  currentFolderId: string | null
   documents: Document[]
-  projects: Project[]
+  folders: Folder[]
   onDiffReceived: (chunks: Array<{ id: string; oldText: string; newText: string; explanation: string }> | null) => void
 }
 
@@ -23,9 +23,9 @@ function RightSidebar({
   selectedText,
   canvasContent,
   currentDocumentId,
-  currentProjectId,
+  currentFolderId,
   documents,
-  projects,
+  folders,
   onDiffReceived
 }: RightSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
@@ -72,9 +72,9 @@ function RightSidebar({
           canvasContent,
           selectedText: selectedText || undefined,
           currentDocumentId: currentDocumentId || undefined,
-          currentProjectId: currentProjectId || undefined,
+          currentFolderId: currentFolderId || undefined,
           documents,
-          projects
+          folders
         },
         {
           // Called for each diff chunk as it arrives

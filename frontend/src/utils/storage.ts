@@ -1,7 +1,8 @@
-import type { Document, Project } from '../types'
+import type { Document, Folder } from '../types'
 
 const DOCUMENTS_KEY = 'esmero_documents'
-const PROJECTS_KEY = 'esmero_projects'
+const FOLDERS_KEY = 'esmero_folders'
+const OLD_PROJECTS_KEY = 'esmero_projects' // Keep for migration
 
 export const loadDocuments = (): Document[] => {
   try {
@@ -21,20 +22,35 @@ export const saveDocuments = (documents: Document[]): void => {
   }
 }
 
-export const loadProjects = (): Project[] => {
+export const loadFolders = (): Folder[] => {
   try {
-    const stored = localStorage.getItem(PROJECTS_KEY)
-    return stored ? JSON.parse(stored) : []
+    // First try to load from new key
+    let stored = localStorage.getItem(FOLDERS_KEY)
+    if (stored) {
+      return JSON.parse(stored)
+    }
+
+    // If not found, try old projects key for migration
+    stored = localStorage.getItem(OLD_PROJECTS_KEY)
+    if (stored) {
+      const folders = JSON.parse(stored)
+      // Save to new key and remove old one
+      localStorage.setItem(FOLDERS_KEY, stored)
+      localStorage.removeItem(OLD_PROJECTS_KEY)
+      return folders
+    }
+
+    return []
   } catch (error) {
-    console.error('Failed to load projects:', error)
+    console.error('Failed to load folders:', error)
     return []
   }
 }
 
-export const saveProjects = (projects: Project[]): void => {
+export const saveFolders = (folders: Folder[]): void => {
   try {
-    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects))
+    localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders))
   } catch (error) {
-    console.error('Failed to save projects:', error)
+    console.error('Failed to save folders:', error)
   }
 }

@@ -22,9 +22,9 @@ export async function determineContext(
         selectedText: request.selectedText,
         canvasContent: request.canvasContent,
         currentDocumentId: request.currentDocumentId,
-        currentProjectId: request.currentProjectId,
+        currentFolderId: request.currentFolderId,
         documents: request.documents,
-        projects: request.projects
+        folders: request.folders
       })
     ])
 

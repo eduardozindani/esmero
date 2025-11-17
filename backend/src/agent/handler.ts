@@ -16,9 +16,9 @@ export async function handleAgentRequest(
       hasCanvasContent: !!request.canvasContent,
       canvasLength: request.canvasContent?.length || 0,
       currentDocId: request.currentDocumentId,
-      currentProjectId: request.currentProjectId,
+      currentFolderId: request.currentFolderId,
       documentsCount: request.documents.length,
-      projectsCount: request.projects?.length || 0,
+      foldersCount: request.folders?.length || 0,
       documentTitles: request.documents.map(d => d.title).slice(0, 5).join(', ')
     })
 

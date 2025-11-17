@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import type { Document, Project } from '../types'
+import type { Document, Folder } from '../types'
 import FolderClosed from './icons/FolderClosed'
 import FolderOpen from './icons/FolderOpen'
 import DocumentIcon from './icons/DocumentIcon'
@@ -8,43 +8,43 @@ interface LeftSidebarProps {
   isExpanded: boolean
   onToggle: () => void
   documents: Document[]
-  projects: Project[]
-  currentProjectId: string | null
+  folders: Folder[]
+  currentFolderId: string | null
   onDocumentClick: (documentId: string) => void
-  onCreateProject: (name: string) => void
-  onProjectClick: (projectId: string | null) => void
-  onUpdateProjectName: (projectId: string, newName: string) => void
+  onCreateFolder: (name: string) => void
+  onFolderClick: (folderId: string | null) => void
+  onUpdateFolderName: (folderId: string, newName: string) => void
   onDeleteDocument: (documentId: string) => void
-  onDeleteProject: (projectId: string) => void
+  onDeleteFolder: (folderId: string) => void
 }
 
 function LeftSidebar({
   isExpanded,
   onToggle,
   documents,
-  projects,
-  currentProjectId,
+  folders,
+  currentFolderId,
   onDocumentClick,
-  onCreateProject,
-  onProjectClick,
-  onUpdateProjectName,
+  onCreateFolder,
+  onFolderClick,
+  onUpdateFolderName,
   onDeleteDocument,
-  onDeleteProject
+  onDeleteFolder
 }: LeftSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
-  const [editingProjectName, setEditingProjectName] = useState(false)
+  const [editingFolderName, setEditingFolderName] = useState(false)
   const [editedName, setEditedName] = useState('')
-  const [projectToDelete, setProjectToDelete] = useState<string | null>(null)
-  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; projectId?: string; documentId?: string } | null>(null)
+  const [folderToDelete, setFolderToDelete] = useState<string | null>(null)
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; folderId?: string; documentId?: string } | null>(null)
 
-  const handleDeleteProject = (projectId: string) => {
-    onDeleteProject(projectId)
-    setProjectToDelete(null)
+  const handleDeleteFolder = (folderId: string) => {
+    onDeleteFolder(folderId)
+    setFolderToDelete(null)
     setContextMenu(null)
-    // If we're currently in this project, go back to all
-    if (currentProjectId === projectId) {
-      onProjectClick(null)
+    // If we're currently in this folder, go back to all
+    if (currentFolderId === folderId) {
+      onFolderClick(null)
     }
   }
 
@@ -66,12 +66,12 @@ function LeftSidebar({
   }, [isExpanded])
 
   // Filter and sort documents
-  const filteredDocuments = currentProjectId
-    ? documents.filter(doc => doc.projectId === currentProjectId)
-    : documents.filter(doc => doc.projectId === null)
+  const filteredDocuments = currentFolderId
+    ? documents.filter(doc => doc.folderId === currentFolderId)
+    : documents.filter(doc => doc.folderId === null)
 
   const sortedDocuments = [...filteredDocuments].sort((a, b) => b.updatedAt - a.updatedAt)
-  const sortedProjects = [...projects].sort((a, b) => b.updatedAt - a.updatedAt)
+  const sortedFolders = [...folders].sort((a, b) => b.updatedAt - a.updatedAt)
 
   return (
     <>
@@ -128,23 +128,23 @@ function LeftSidebar({
             </div>
 
             <div className="flex flex-col h-full p-4">
-              {/* New Project - only show when NOT in a project */}
-              {!currentProjectId && (
+              {/* New Folder - only show when NOT in a folder */}
+              {!currentFolderId && (
                 <div className="mb-4">
                   <div
-                    onClick={() => onCreateProject('New Project')}
+                    onClick={() => onCreateFolder('New Folder')}
                     className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer transition"
                   >
                     <span className="flex-shrink-0 text-gray-600 text-sm">+</span>
-                    <p className="text-sm text-gray-600 font-bold">New Project</p>
+                    <p className="text-sm text-gray-600 font-bold">New Folder</p>
                   </div>
                 </div>
               )}
 
-              {/* Project name header when inside a project */}
-              {currentProjectId && (
+              {/* Folder name header when inside a folder */}
+              {currentFolderId && (
                 <div className="mb-4">
-                  {editingProjectName ? (
+                  {editingFolderName ? (
                     <div className="flex items-center gap-2 w-full min-w-0">
                       <FolderOpen className="flex-shrink-0 text-gray-600" />
                       <input
@@ -153,13 +153,13 @@ function LeftSidebar({
                         onChange={(e) => setEditedName(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
-                            onUpdateProjectName(currentProjectId, editedName)
-                            setEditingProjectName(false)
+                            onUpdateFolderName(currentFolderId, editedName)
+                            setEditingFolderName(false)
                           } else if (e.key === 'Escape') {
-                            setEditingProjectName(false)
+                            setEditingFolderName(false)
                           }
                         }}
-                        onBlur={() => setEditingProjectName(false)}
+                        onBlur={() => setEditingFolderName(false)}
                         autoFocus
                         className="flex-1 min-w-0 text-lg font-bold px-2 py-1 border border-gray-300 rounded focus:outline-none focus:border-gray-500"
                       />
@@ -167,24 +167,24 @@ function LeftSidebar({
                   ) : (
                     <div className="flex items-center gap-2 min-w-0">
                       <span
-                        onClick={() => onProjectClick(null)}
+                        onClick={() => onFolderClick(null)}
                         className="flex-shrink-0 text-gray-600 cursor-pointer hover:text-gray-800 transition px-2 py-1"
                       >
                         ←
                       </span>
                       <div
                         onClick={() => {
-                          const project = projects.find(p => p.id === currentProjectId)
-                          if (project) {
-                            setEditedName(project.name)
-                            setEditingProjectName(true)
+                          const folder = folders.find(f => f.id === currentFolderId)
+                          if (folder) {
+                            setEditedName(folder.name)
+                            setEditingFolderName(true)
                           }
                         }}
                         className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 px-2 py-1 rounded transition flex-1 min-w-0"
                       >
                         <FolderOpen className="flex-shrink-0 text-gray-600" />
                         <h2 className="text-lg font-bold truncate">
-                          {projects.find(p => p.id === currentProjectId)?.name || 'Untitled'}
+                          {folders.find(f => f.id === currentFolderId)?.name || 'Untitled'}
                         </h2>
                       </div>
                     </div>
@@ -192,23 +192,23 @@ function LeftSidebar({
                 </div>
               )}
 
-              {/* Projects Section */}
-              {!currentProjectId && sortedProjects.length > 0 && (
+              {/* Folders Section */}
+              {!currentFolderId && sortedFolders.length > 0 && (
                 <div className="mb-4">
-                  {sortedProjects.map(project => (
+                  {sortedFolders.map(folder => (
                     <div
-                      key={project.id}
-                      onClick={() => onProjectClick(project.id)}
+                      key={folder.id}
+                      onClick={() => onFolderClick(folder.id)}
                       onContextMenu={(e) => {
                         e.preventDefault()
                         e.stopPropagation()
-                        setContextMenu({ x: e.clientX, y: e.clientY, projectId: project.id })
+                        setContextMenu({ x: e.clientX, y: e.clientY, folderId: folder.id })
                       }}
                       className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition"
                     >
                       <FolderClosed className="flex-shrink-0 text-gray-600" />
                       <p className="text-sm text-gray-800 font-bold truncate">
-                        {project.name}
+                        {folder.name}
                       </p>
                     </div>
                   ))}
@@ -249,8 +249,8 @@ function LeftSidebar({
                 >
                   <button
                     onClick={() => {
-                      if (contextMenu.projectId) {
-                        setProjectToDelete(contextMenu.projectId)
+                      if (contextMenu.folderId) {
+                        setFolderToDelete(contextMenu.folderId)
                       } else if (contextMenu.documentId) {
                         handleDeleteDocument(contextMenu.documentId)
                       }
@@ -263,23 +263,23 @@ function LeftSidebar({
               )}
             </div>
 
-            {/* Delete Project Confirmation Modal */}
-            {projectToDelete && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setProjectToDelete(null)}>
+            {/* Delete Folder Confirmation Modal */}
+            {folderToDelete && (
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50" onClick={() => setFolderToDelete(null)}>
                 <div className="bg-white rounded-lg p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
-                  <h3 className="text-lg font-bold mb-2">Delete Project?</h3>
+                  <h3 className="text-lg font-bold mb-2">Delete Folder?</h3>
                   <p className="text-sm text-gray-600 mb-4">
-                    This will delete "{projects.find(p => p.id === projectToDelete)?.name}" and all {documents.filter(d => d.projectId === projectToDelete).length} document(s) inside.
+                    This will delete "{folders.find(f => f.id === folderToDelete)?.name}" and all {documents.filter(d => d.folderId === folderToDelete).length} document(s) inside.
                   </p>
                   <div className="flex gap-2 justify-end">
                     <button
-                      onClick={() => setProjectToDelete(null)}
+                      onClick={() => setFolderToDelete(null)}
                       className="px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded transition"
                     >
                       Cancel
                     </button>
                     <button
-                      onClick={() => handleDeleteProject(projectToDelete)}
+                      onClick={() => handleDeleteFolder(folderToDelete)}
                       className="px-4 py-2 text-sm bg-red-600 text-white hover:bg-red-700 rounded transition"
                     >
                       Delete

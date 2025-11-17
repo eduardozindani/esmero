@@ -55,7 +55,7 @@ export interface FileContext {
     title: string
     content: string
   } | null
-  projectDocuments: Array<{
+  folderDocuments: Array<{
     id: string
     title: string
     content: string
@@ -78,14 +78,14 @@ export interface IncomingAgentRequest {
   canvasContent: string
   selectedText?: string
   currentDocumentId?: string
-  currentProjectId?: string
+  currentFolderId?: string
   documents: Array<{
     id: string
     title: string
     content: string
-    projectId: string | null
+    folderId: string | null
   }>
-  projects: Array<{
+  folders: Array<{
     id: string
     name: string
   }>

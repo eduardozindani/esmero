@@ -2,7 +2,7 @@ interface Document {
   id: string
   title: string
   content: string
-  projectId: string | null
+  folderId: string | null
 }
 
 /**

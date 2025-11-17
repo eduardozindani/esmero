@@ -8,10 +8,10 @@ interface Document {
   id: string
   title: string
   content: string
-  projectId: string | null
+  folderId: string | null
 }
 
-interface Project {
+interface Folder {
   id: string
   name: string
 }
@@ -21,9 +21,9 @@ interface FileContextInput {
   selectedText: string | undefined
   canvasContent: string  // Live canvas content (HTML)
   currentDocumentId: string | undefined
-  currentProjectId: string | undefined
+  currentFolderId: string | undefined
   documents: Document[]
-  projects: Project[]
+  folders: Folder[]
 }
 
 /**
@@ -37,26 +37,26 @@ export async function determineFile(input: FileContextInput): Promise<FileContex
       selectedText,
       canvasContent,
       currentDocumentId,
-      currentProjectId,
+      currentFolderId,
       documents,
-      projects
+      folders
     } = input
 
     // Execute in parallel (AI Chef pattern)
     // Now includes intelligent LLM-based filtering for relevance
-    const [selection, currentPage, projectDocuments] = await Promise.all([
+    const [selection, currentPage, folderDocuments] = await Promise.all([
       Promise.resolve(getCurrentSelection(selectedText)),
       Promise.resolve(getCurrentPage(canvasContent, currentDocumentId, documents)),
-      getRelevantDocuments(userMessage, currentProjectId, currentDocumentId, documents, projects)
+      getRelevantDocuments(userMessage, currentFolderId, currentDocumentId, documents, folders)
     ])
 
     // Format into structured text for LLM
-    const structured = formatStructured(selection, currentPage, projectDocuments, projects)
+    const structured = formatStructured(selection, currentPage, folderDocuments, folders)
 
     return {
       currentSelection: selection,
       currentPage,
-      projectDocuments,
+      folderDocuments,
       structured
     }
   } catch (error) {
@@ -66,7 +66,7 @@ export async function determineFile(input: FileContextInput): Promise<FileContex
     return {
       currentSelection: null,
       currentPage: null,
-      projectDocuments: [],
+      folderDocuments: [],
       structured: '<File_Context>\n[Error loading file context]\n</File_Context>'
     }
   }

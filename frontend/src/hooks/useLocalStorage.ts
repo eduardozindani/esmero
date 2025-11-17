@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import type { Document, Project } from '../types'
-import { loadDocuments, saveDocuments, loadProjects, saveProjects } from '../utils/storage'
+import type { Document, Folder } from '../types'
+import { loadDocuments, saveDocuments, loadFolders, saveFolders } from '../utils/storage'
 
 export const useDocuments = () => {
   const [documents, setDocuments] = useState<Document[]>([])
@@ -17,17 +17,17 @@ export const useDocuments = () => {
   return [documents, updateDocuments] as const
 }
 
-export const useProjects = () => {
-  const [projects, setProjects] = useState<Project[]>([])
+export const useFolders = () => {
+  const [folders, setFolders] = useState<Folder[]>([])
 
   useEffect(() => {
-    setProjects(loadProjects())
+    setFolders(loadFolders())
   }, [])
 
-  const updateProjects = (newProjects: Project[]) => {
-    setProjects(newProjects)
-    saveProjects(newProjects)
+  const updateFolders = (newFolders: Folder[]) => {
+    setFolders(newFolders)
+    saveFolders(newFolders)
   }
 
-  return [projects, updateProjects] as const
+  return [folders, updateFolders] as const
 }
