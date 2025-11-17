@@ -3,10 +3,13 @@ import type { Document, Folder } from '../types'
 import FolderClosed from './icons/FolderClosed'
 import FolderOpen from './icons/FolderOpen'
 import DocumentIcon from './icons/DocumentIcon'
+import ResizeHandle from './ResizeHandle'
 
 interface LeftSidebarProps {
   isExpanded: boolean
   onToggle: () => void
+  width: number
+  onResize: (width: number) => void
   documents: Document[]
   folders: Folder[]
   currentFolderId: string | null
@@ -21,6 +24,8 @@ interface LeftSidebarProps {
 function LeftSidebar({
   isExpanded,
   onToggle,
+  width,
+  onResize,
   documents,
   folders,
   currentFolderId,
@@ -37,6 +42,7 @@ function LeftSidebar({
   const [editedName, setEditedName] = useState('')
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; folderId?: string; documentId?: string } | null>(null)
+  const [isResizing, setIsResizing] = useState(false)
 
   const handleDeleteFolder = (folderId: string) => {
     onDeleteFolder(folderId)
@@ -101,31 +107,43 @@ function LeftSidebar({
       <div
         className={`
           bg-gray-50 border-r border-gray-200 relative flex flex-col
-          transition-all duration-300 ease-in-out
-          ${isExpanded ? 'w-64' : 'w-0 overflow-hidden border-0'}
+          ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}
+          ${isExpanded ? '' : 'w-0 overflow-hidden border-0'}
         `}
+        style={{ width: isExpanded ? `${width}px` : 0 }}
       >
         {isExpanded && (
           <>
+            {/* Resize handle */}
+            <ResizeHandle
+              side="left"
+              onResize={onResize}
+              currentWidth={width}
+              onResizeStart={() => setIsResizing(true)}
+              onResizeEnd={() => setIsResizing(false)}
+            />
+
             {/* Close trigger strip spanning both sides of division */}
-            <div
-              onClick={onToggle}
-              className="absolute -right-10 top-0 h-full w-20 z-20 cursor-pointer"
-              onMouseEnter={() => setShowCloseTrigger(true)}
-              onMouseLeave={() => setShowCloseTrigger(false)}
-            >
+            {!isResizing && (
               <div
-                className={`absolute right-10 top-1/2 -translate-y-1/2
-                           bg-gray-800/20 backdrop-blur-sm
-                           h-16 w-8 rounded-l-lg
-                           flex items-center justify-center
-                           text-gray-600
-                           transition-opacity duration-300 pointer-events-none
-                           ${showCloseTrigger ? 'opacity-100' : 'opacity-0'}`}
+                onClick={onToggle}
+                className="absolute -right-10 top-0 h-full w-20 z-20 cursor-pointer"
+                onMouseEnter={() => setShowCloseTrigger(true)}
+                onMouseLeave={() => setShowCloseTrigger(false)}
+              >
+                <div
+                  className={`absolute right-10 top-1/2 -translate-y-1/2
+                             bg-gray-800/20 backdrop-blur-sm
+                             h-16 w-8 rounded-l-lg
+                             flex items-center justify-center
+                             text-gray-600
+                             transition-opacity duration-300 pointer-events-none
+                             ${showCloseTrigger ? 'opacity-100' : 'opacity-0'}`}
               >
                 ←
               </div>
             </div>
+            )}
 
             <div className="flex flex-col h-full p-4">
               {/* New Folder - only show when NOT in a folder */}
@@ -232,7 +250,7 @@ function LeftSidebar({
                     {doc.titleLoading ? (
                       <div className="flex-1 h-4 bg-gray-300 rounded animate-pulse" />
                     ) : (
-                      <p className="text-sm text-gray-800 truncate animate-fadeIn">
+                      <p className={`text-sm text-gray-800 truncate ${doc.titleJustGenerated ? 'animate-fadeIn' : ''}`}>
                         {doc.title}
                       </p>
                     )}

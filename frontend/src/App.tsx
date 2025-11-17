@@ -3,6 +3,7 @@ import LeftSidebar from './components/LeftSidebar'
 import Canvas from './components/Canvas'
 import RightSidebar from './components/RightSidebar/RightSidebar'
 import { useDocuments, useFolders } from './hooks/useLocalStorage'
+import { useSidebarWidths } from './hooks/useSidebarWidths'
 import { generateTitle } from './services/api'
 import { generateId } from './utils/id'
 import { extractTextFromHTML, isHTMLEmpty } from './utils/html'
@@ -11,6 +12,7 @@ import type { Document } from './types'
 function App() {
   const [documents, setDocuments] = useDocuments()
   const [folders, setFolders] = useFolders()
+  const [sidebarWidths, updateSidebarWidths] = useSidebarWidths()
   const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(null)
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
   const [canvasContent, setCanvasContent] = useState('')
@@ -86,15 +88,37 @@ function App() {
 
     // Generate title in background (with race condition protection)
     titleGenerationRef.current = docId
+
+    // Set a timeout to clean up loading state if title generation takes too long
+    const timeoutId = setTimeout(() => {
+      // If this document is still loading after 10 seconds, clean it up
+      if (titleGenerationRef.current === docId) {
+        setDocuments(prev => prev.map(doc =>
+          doc.id === docId ? { ...doc, titleLoading: false } : doc
+        ))
+        titleGenerationRef.current = null
+      }
+    }, 10000) // 10 second timeout
+
     const title = await generateTitle(content)
+
+    // Clear the timeout since we got a response
+    clearTimeout(timeoutId)
 
     // Only update if this is still the most recent save
     if (titleGenerationRef.current === docId) {
       const finalDocuments = updatedDocuments.map(doc =>
-        doc.id === docId ? { ...doc, title, titleLoading: false } : doc
+        doc.id === docId ? { ...doc, title, titleLoading: false, titleJustGenerated: true } : doc
       )
       setDocuments(finalDocuments)
       titleGenerationRef.current = null
+
+      // Clear the "just generated" flag after animation completes (300ms)
+      setTimeout(() => {
+        setDocuments(prev => prev.map(doc =>
+          doc.id === docId ? { ...doc, titleJustGenerated: false } : doc
+        ))
+      }, 300)
     }
   }
 
@@ -192,6 +216,8 @@ function App() {
       <LeftSidebar
         isExpanded={leftSidebarExpanded}
         onToggle={() => setLeftSidebarExpanded(!leftSidebarExpanded)}
+        width={sidebarWidths.left}
+        onResize={(width) => updateSidebarWidths({ left: width })}
         documents={documents}
         folders={folders}
         currentFolderId={currentFolderId}
@@ -215,6 +241,8 @@ function App() {
       <RightSidebar
         isExpanded={rightSidebarExpanded}
         onToggle={() => setRightSidebarExpanded(!rightSidebarExpanded)}
+        width={sidebarWidths.right}
+        onResize={(width) => updateSidebarWidths({ right: width })}
         selectedText={selectedText}
         canvasContent={canvasContent}
         currentDocumentId={currentDocumentId}

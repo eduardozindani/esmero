@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import ConversationDisplay from './ConversationDisplay'
 import InputArea from './InputArea'
+import ResizeHandle from '../ResizeHandle'
 import type { Message } from './types'
 import type { Document, Folder } from '../../types'
 import { streamAgentMessage } from '../../services/api'
@@ -8,6 +9,8 @@ import { streamAgentMessage } from '../../services/api'
 interface RightSidebarProps {
   isExpanded: boolean
   onToggle: () => void
+  width: number
+  onResize: (width: number) => void
   selectedText: string | null
   canvasContent: string
   currentDocumentId: string | null
@@ -20,6 +23,8 @@ interface RightSidebarProps {
 function RightSidebar({
   isExpanded,
   onToggle,
+  width,
+  onResize,
   selectedText,
   canvasContent,
   currentDocumentId,
@@ -31,6 +36,7 @@ function RightSidebar({
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
+  const [isResizing, setIsResizing] = useState(false)
 
   useEffect(() => {
     // Reset triggers when expansion state changes
@@ -176,31 +182,43 @@ function RightSidebar({
       <div
         className={`
           bg-gray-50 border-l border-gray-200 relative flex flex-col
-          transition-all duration-300 ease-in-out
-          ${isExpanded ? 'w-96' : 'w-0 overflow-hidden border-0'}
+          ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}
+          ${isExpanded ? '' : 'w-0 overflow-hidden border-0'}
         `}
+        style={{ width: isExpanded ? `${width}px` : 0 }}
       >
         {isExpanded && (
           <>
+            {/* Resize handle */}
+            <ResizeHandle
+              side="right"
+              onResize={onResize}
+              currentWidth={width}
+              onResizeStart={() => setIsResizing(true)}
+              onResizeEnd={() => setIsResizing(false)}
+            />
+
             {/* Close trigger strip spanning both sides of division */}
-            <div
-              onClick={onToggle}
-              className="absolute -left-10 top-0 h-full w-20 z-20 cursor-pointer"
-              onMouseEnter={() => setShowCloseTrigger(true)}
-              onMouseLeave={() => setShowCloseTrigger(false)}
-            >
+            {!isResizing && (
               <div
-                className={`absolute left-10 top-1/2 -translate-y-1/2
-                           bg-gray-800/20 backdrop-blur-sm
-                           h-16 w-8 rounded-r-lg
-                           flex items-center justify-center
-                           text-gray-600
-                           transition-opacity duration-300 pointer-events-none
-                           ${showCloseTrigger ? 'opacity-100' : 'opacity-0'}`}
+                onClick={onToggle}
+                className="absolute -left-10 top-0 h-full w-20 z-20 cursor-pointer"
+                onMouseEnter={() => setShowCloseTrigger(true)}
+                onMouseLeave={() => setShowCloseTrigger(false)}
               >
-                →
+                <div
+                  className={`absolute left-10 top-1/2 -translate-y-1/2
+                             bg-gray-800/20 backdrop-blur-sm
+                             h-16 w-8 rounded-r-lg
+                             flex items-center justify-center
+                             text-gray-600
+                             transition-opacity duration-300 pointer-events-none
+                             ${showCloseTrigger ? 'opacity-100' : 'opacity-0'}`}
+                >
+                  →
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Conversation */}
             <ConversationDisplay messages={messages} />

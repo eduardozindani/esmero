@@ -7,7 +7,16 @@ const OLD_PROJECTS_KEY = 'esmero_projects' // Keep for migration
 export const loadDocuments = (): Document[] => {
   try {
     const stored = localStorage.getItem(DOCUMENTS_KEY)
-    return stored ? JSON.parse(stored) : []
+    if (!stored) return []
+
+    // Parse documents and clean any stale loading states
+    const documents: Document[] = JSON.parse(stored)
+    return documents.map(doc => ({
+      ...doc,
+      // Reset any stale loading states from previous sessions
+      titleLoading: false,
+      titleJustGenerated: false  // Clean up animation flags
+    }))
   } catch (error) {
     console.error('Failed to load documents:', error)
     return []

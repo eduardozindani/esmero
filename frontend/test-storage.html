@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head><title>Storage Test</title></head>
+<body>
+<h1>LocalStorage Data</h1>
+<pre id="output"></pre>
+<script>
+const docs = localStorage.getItem('esmero_documents');
+const parsed = docs ? JSON.parse(docs) : [];
+document.getElementById('output').textContent = JSON.stringify(parsed, null, 2);
+console.log('Documents with titleLoading:', parsed.filter(d => d.titleLoading));
+</script>
+</body>
+</html>

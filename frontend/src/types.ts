@@ -6,6 +6,7 @@ export interface Document {
   updatedAt: number
   folderId: string | null
   titleLoading?: boolean
+  titleJustGenerated?: boolean  // Temporary flag for animation
 }
 
 export interface Folder {
