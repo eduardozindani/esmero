@@ -56,14 +56,16 @@ function App() {
     // Determine document ID
     const docId = isUpdate ? currentDocumentId : generateId('doc')
 
-    // Create or update document with loading state
-    const newDoc: Document = isUpdate
+    // Create or update document
+    // For updates: keep existing title, don't show loading skeleton
+    // For new docs: show loading skeleton
+    const existingDoc = documents.find(d => d.id === docId)
+    const newDoc: Document = isUpdate && existingDoc
       ? {
-          ...documents.find(d => d.id === docId)!,
+          ...existingDoc,
           content,
           updatedAt: now,
-          title: '',
-          titleLoading: true
+          // Keep existing title, no loading state for updates
         }
       : {
           id: docId,
@@ -72,7 +74,7 @@ function App() {
           createdAt: now,
           updatedAt: now,
           folderId: currentFolderId,
-          titleLoading: true
+          titleLoading: true  // Only show skeleton for new documents
         }
 
     // Update documents array (single update)
@@ -90,7 +92,8 @@ function App() {
     titleGenerationRef.current = docId
 
     // Set a timeout to clean up loading state if title generation takes too long
-    const timeoutId = setTimeout(() => {
+    // Only for new documents that have skeleton loading state
+    const timeoutId = !isUpdate ? setTimeout(() => {
       // If this document is still loading after 10 seconds, clean it up
       if (titleGenerationRef.current === docId) {
         setDocuments(prev => prev.map(doc =>
@@ -98,12 +101,12 @@ function App() {
         ))
         titleGenerationRef.current = null
       }
-    }, 10000) // 10 second timeout
+    }, 10000) : null // 10 second timeout only for new documents
 
     const title = await generateTitle(content)
 
-    // Clear the timeout since we got a response
-    clearTimeout(timeoutId)
+    // Clear the timeout since we got a response (if it exists)
+    if (timeoutId) clearTimeout(timeoutId)
 
     // Only update if this is still the most recent save
     if (titleGenerationRef.current === docId) {

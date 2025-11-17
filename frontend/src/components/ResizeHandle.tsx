@@ -69,25 +69,34 @@ function ResizeHandle({
 
   return (
     <div
-      className={`absolute top-0 h-full w-1 z-30 ${
-        side === 'left' ? '-right-0.5' : '-left-0.5'
+      className={`absolute top-0 h-full z-30 ${
+        side === 'left' ? '-right-2' : '-left-2'
       }`}
+      style={{ width: '8px' }}
       onMouseDown={handleMouseDown}
       onMouseEnter={() => !isResizing && setShowHandle(true)}
       onMouseLeave={() => !isResizing && setShowHandle(false)}
-      style={{ cursor: 'ew-resize' }}
     >
-      {/* Visual indicator - Grip dots */}
+      {/* Three visual states */}
       <div
-        className={`h-full w-full transition-opacity duration-200`}
-        style={{
-          opacity: showHandle || isResizing ? 1 : 0,
-          backgroundImage: 'radial-gradient(circle, rgba(156, 163, 175, 0.4) 1.5px, transparent 1.5px)',
-          backgroundSize: '4px 10px',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'repeat-y'
-        }}
-      />
+        className="h-full w-full flex items-center justify-center"
+        style={{ cursor: 'ew-resize' }}
+      >
+        {/* Vertical line that changes based on state */}
+        <div
+          className={`h-full transition-all duration-200 ${
+            side === 'left' ? 'mr-1' : 'ml-1'
+          }`}
+          style={{
+            width: isResizing ? '3px' : showHandle ? '2px' : '1px',
+            backgroundColor: isResizing
+              ? 'rgba(107, 114, 128, 0.5)' // gray-500 with opacity when dragging
+              : showHandle
+                ? 'rgba(156, 163, 175, 0.3)' // gray-400 with opacity when hovering
+                : 'transparent'
+          }}
+        />
+      </div>
     </div>
   )
 }
