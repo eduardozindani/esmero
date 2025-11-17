@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
-
-const SIDEBAR_WIDTHS_KEY = 'esmero_sidebar_widths'
+import { STORAGE_KEYS, SIDEBAR_CONSTRAINTS } from '../constants/ui'
 
 interface SidebarWidths {
   left: number
@@ -8,16 +7,17 @@ interface SidebarWidths {
 }
 
 const DEFAULT_WIDTHS: SidebarWidths = {
-  left: 256,  // w-64
-  right: 384  // w-96
+  left: SIDEBAR_CONSTRAINTS.DEFAULT_LEFT_WIDTH,
+  right: SIDEBAR_CONSTRAINTS.DEFAULT_RIGHT_WIDTH
 }
 
 export const useSidebarWidths = () => {
   const [widths, setWidths] = useState<SidebarWidths>(DEFAULT_WIDTHS)
 
+  // Load persisted sidebar widths on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(SIDEBAR_WIDTHS_KEY)
+      const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTHS)
       if (stored) {
         const parsed = JSON.parse(stored)
         setWidths({
@@ -33,8 +33,10 @@ export const useSidebarWidths = () => {
   const updateWidths = (newWidths: Partial<SidebarWidths>) => {
     const updated = { ...widths, ...newWidths }
     setWidths(updated)
+
+    // Persist to localStorage immediately
     try {
-      localStorage.setItem(SIDEBAR_WIDTHS_KEY, JSON.stringify(updated))
+      localStorage.setItem(STORAGE_KEYS.SIDEBAR_WIDTHS, JSON.stringify(updated))
     } catch (error) {
       console.error('Failed to save sidebar widths:', error)
     }

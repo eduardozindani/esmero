@@ -7,6 +7,7 @@ import { useSidebarWidths } from './hooks/useSidebarWidths'
 import { generateTitle } from './services/api'
 import { generateId } from './utils/id'
 import { extractTextFromHTML, isHTMLEmpty } from './utils/html'
+import { ANIMATIONS } from './constants/ui'
 import type { Document } from './types'
 
 function App() {
@@ -29,23 +30,32 @@ function App() {
   // Track pending title generation to prevent race conditions
   const titleGenerationRef = useRef<string | null>(null)
 
+  /**
+   * Handles document saving with intelligent title generation
+   *
+   * Behavior:
+   * - New documents: Show skeleton loader → Generate title → Fade in animation
+   * - Existing documents: Keep old title visible → Generate new title → Fade in animation
+   * - Empty canvas: Do nothing
+   * - No changes: Clear canvas without saving
+   */
   const handleSaveDocument = async () => {
     const content = canvasContent.trim()
 
-    // Issue 2: If canvas is empty (no text content), just do nothing
+    // Don't save empty documents
     if (isHTMLEmpty(content)) return
 
     const now = Date.now()
     const isUpdate = !!currentDocumentId
 
-    // Issue 1: If loading existing document without changes (compare text, not HTML), just clear canvas
+    // Check if document actually changed (compare text content, not HTML)
     if (isUpdate) {
       const existingDoc = documents.find(d => d.id === currentDocumentId)
       if (existingDoc) {
         const currentText = extractTextFromHTML(content)
         const existingText = extractTextFromHTML(existingDoc.content)
         if (currentText === existingText) {
-          // No changes made, just clear canvas
+          // No actual changes - just clear the canvas
           setCanvasContent('')
           setCurrentDocumentId(null)
           return
@@ -53,75 +63,79 @@ function App() {
       }
     }
 
-    // Determine document ID
+    // Create or update the document
     const docId = isUpdate ? currentDocumentId : generateId('doc')
-
-    // Create or update document
-    // For updates: keep existing title, don't show loading skeleton
-    // For new docs: show loading skeleton
     const existingDoc = documents.find(d => d.id === docId)
+
     const newDoc: Document = isUpdate && existingDoc
       ? {
           ...existingDoc,
           content,
           updatedAt: now,
-          // Keep existing title, no loading state for updates
+          // For updates: preserve existing title, no loading state
         }
       : {
+          // For new documents: start with loading state
           id: docId,
           content,
           title: '',
           createdAt: now,
           updatedAt: now,
           folderId: currentFolderId,
-          titleLoading: true  // Only show skeleton for new documents
+          titleLoading: true
         }
 
-    // Update documents array (single update)
+    // Save document immediately
     const updatedDocuments = isUpdate
       ? documents.map(doc => doc.id === docId ? newDoc : doc)
       : [...documents, newDoc]
 
     setDocuments(updatedDocuments)
 
-    // Clear canvas
+    // Clear canvas for next document
     setCanvasContent('')
     setCurrentDocumentId(null)
 
-    // Generate title in background (with race condition protection)
+    // --- Title Generation (async, non-blocking) ---
+
+    // Mark this document as having pending title generation
     titleGenerationRef.current = docId
 
-    // Set a timeout to clean up loading state if title generation takes too long
-    // Only for new documents that have skeleton loading state
+    // For new documents only: Set timeout to remove skeleton if generation fails
     const timeoutId = !isUpdate ? setTimeout(() => {
-      // If this document is still loading after 10 seconds, clean it up
       if (titleGenerationRef.current === docId) {
+        // Generation timed out - remove loading state
         setDocuments(prev => prev.map(doc =>
           doc.id === docId ? { ...doc, titleLoading: false } : doc
         ))
         titleGenerationRef.current = null
       }
-    }, 10000) : null // 10 second timeout only for new documents
+    }, ANIMATIONS.TITLE_GENERATION_TIMEOUT) : null
 
+    // Generate title with LLM
     const title = await generateTitle(content)
 
-    // Clear the timeout since we got a response (if it exists)
+    // Clear timeout if it exists
     if (timeoutId) clearTimeout(timeoutId)
 
-    // Only update if this is still the most recent save
+    // Only apply title if this is still the most recent generation
+    // (prevents race conditions when multiple saves happen quickly)
     if (titleGenerationRef.current === docId) {
+      // Apply new title with fade-in animation flag
       const finalDocuments = updatedDocuments.map(doc =>
-        doc.id === docId ? { ...doc, title, titleLoading: false, titleJustGenerated: true } : doc
+        doc.id === docId
+          ? { ...doc, title, titleLoading: false, titleJustGenerated: true }
+          : doc
       )
       setDocuments(finalDocuments)
       titleGenerationRef.current = null
 
-      // Clear the "just generated" flag after animation completes (300ms)
+      // Remove animation flag after animation completes
       setTimeout(() => {
         setDocuments(prev => prev.map(doc =>
           doc.id === docId ? { ...doc, titleJustGenerated: false } : doc
         ))
-      }, 300)
+      }, ANIMATIONS.TITLE_FADE_IN)
     }
   }
 

@@ -1,21 +1,24 @@
 import type { Document, Folder } from '../types'
+import { STORAGE_KEYS } from '../constants/ui'
 
-const DOCUMENTS_KEY = 'esmero_documents'
-const FOLDERS_KEY = 'esmero_folders'
-const OLD_PROJECTS_KEY = 'esmero_projects' // Keep for migration
-
+/**
+ * Load documents from localStorage with cleanup
+ *
+ * Ensures animation states don't persist across sessions:
+ * - titleLoading: Reset to prevent phantom loading skeletons
+ * - titleJustGenerated: Reset to prevent unwanted fade animations
+ */
 export const loadDocuments = (): Document[] => {
   try {
-    const stored = localStorage.getItem(DOCUMENTS_KEY)
+    const stored = localStorage.getItem(STORAGE_KEYS.DOCUMENTS)
     if (!stored) return []
 
-    // Parse documents and clean any stale loading states
     const documents: Document[] = JSON.parse(stored)
     return documents.map(doc => ({
       ...doc,
-      // Reset any stale loading states from previous sessions
+      // Clean up any animation states that shouldn't persist
       titleLoading: false,
-      titleJustGenerated: false  // Clean up animation flags
+      titleJustGenerated: false
     }))
   } catch (error) {
     console.error('Failed to load documents:', error)
@@ -25,7 +28,7 @@ export const loadDocuments = (): Document[] => {
 
 export const saveDocuments = (documents: Document[]): void => {
   try {
-    localStorage.setItem(DOCUMENTS_KEY, JSON.stringify(documents))
+    localStorage.setItem(STORAGE_KEYS.DOCUMENTS, JSON.stringify(documents))
   } catch (error) {
     console.error('Failed to save documents:', error)
   }
@@ -33,19 +36,19 @@ export const saveDocuments = (documents: Document[]): void => {
 
 export const loadFolders = (): Folder[] => {
   try {
-    // First try to load from new key
-    let stored = localStorage.getItem(FOLDERS_KEY)
+    // First try to load from current key
+    let stored = localStorage.getItem(STORAGE_KEYS.FOLDERS)
     if (stored) {
       return JSON.parse(stored)
     }
 
-    // If not found, try old projects key for migration
-    stored = localStorage.getItem(OLD_PROJECTS_KEY)
+    // Migrate from legacy "projects" naming if it exists
+    stored = localStorage.getItem(STORAGE_KEYS.OLD_PROJECTS)
     if (stored) {
       const folders = JSON.parse(stored)
       // Save to new key and remove old one
-      localStorage.setItem(FOLDERS_KEY, stored)
-      localStorage.removeItem(OLD_PROJECTS_KEY)
+      localStorage.setItem(STORAGE_KEYS.FOLDERS, stored)
+      localStorage.removeItem(STORAGE_KEYS.OLD_PROJECTS)
       return folders
     }
 
@@ -58,7 +61,7 @@ export const loadFolders = (): Folder[] => {
 
 export const saveFolders = (folders: Folder[]): void => {
   try {
-    localStorage.setItem(FOLDERS_KEY, JSON.stringify(folders))
+    localStorage.setItem(STORAGE_KEYS.FOLDERS, JSON.stringify(folders))
   } catch (error) {
     console.error('Failed to save folders:', error)
   }

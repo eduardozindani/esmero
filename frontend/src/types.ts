@@ -5,8 +5,10 @@ export interface Document {
   createdAt: number
   updatedAt: number
   folderId: string | null
-  titleLoading?: boolean
-  titleJustGenerated?: boolean  // Temporary flag for animation
+
+  // Animation state flags (never persisted to localStorage)
+  titleLoading?: boolean          // Shows skeleton loader during title generation
+  titleJustGenerated?: boolean    // Triggers fadeIn animation when title arrives
 }
 
 export interface Folder {
