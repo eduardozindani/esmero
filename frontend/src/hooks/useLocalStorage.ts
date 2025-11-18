@@ -32,9 +32,17 @@ export const useFolders = () => {
     setFolders(loadFolders())
   }, [])
 
-  const updateFolders = (newFolders: Folder[]) => {
-    setFolders(newFolders)
-    saveFolders(newFolders)
+  const updateFolders = (newFolders: Folder[] | ((prev: Folder[]) => Folder[])) => {
+    if (typeof newFolders === 'function') {
+      setFolders((prev) => {
+        const updated = newFolders(prev)
+        saveFolders(updated)
+        return updated
+      })
+    } else {
+      setFolders(newFolders)
+      saveFolders(newFolders)
+    }
   }
 
   return [folders, updateFolders] as const
