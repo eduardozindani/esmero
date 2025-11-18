@@ -8,6 +8,7 @@ interface ResizeHandleProps {
   otherSidebarWidth: number
   onResizeStart?: () => void
   onResizeEnd?: () => void
+  onMaximize?: () => void
 }
 
 /**
@@ -27,14 +28,21 @@ function ResizeHandle({
   currentWidth,
   otherSidebarWidth,
   onResizeStart,
-  onResizeEnd
+  onResizeEnd,
+  onMaximize
 }: ResizeHandleProps) {
   const [isResizing, setIsResizing] = useState(false)
   const [showHandle, setShowHandle] = useState(false)
   const [startX, setStartX] = useState(0)
   const [startWidth, setStartWidth] = useState(0)
 
+  // Heuristic for if the sidebar is currently "maximized" (approx full screen)
+  const isMaximized = currentWidth > window.innerWidth * 0.9
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Don't start resize if clicking the maximize button
+    if ((e.target as HTMLElement).closest('.maximize-btn')) return
+
     e.preventDefault()
     e.stopPropagation()
 
@@ -63,8 +71,8 @@ function ResizeHandle({
         : startWidth - deltaX
 
       // Apply constraints to prevent sidebars from becoming too small or unusably large
-      // Max width = viewport width - other sidebar's width (allows sidebars to completely cover canvas)
-      const maxWidth = window.innerWidth - otherSidebarWidth
+      // Max width = viewport width - other sidebar's width - min canvas width (preserves middle camera)
+      const maxWidth = window.innerWidth - otherSidebarWidth - SIDEBAR_CONSTRAINTS.MIN_CANVAS_WIDTH
       const constrainedWidth = Math.min(
         Math.max(newWidth, SIDEBAR_CONSTRAINTS.MIN_WIDTH),
         maxWidth
@@ -102,20 +110,27 @@ function ResizeHandle({
     ? { right: `-${halfZoneWidth}px` }
     : { left: `-${halfZoneWidth}px` }
 
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    onMaximize?.()
+  }
+
   return (
     <div
-      className="absolute top-0 h-full z-30"
+      className="absolute top-0 h-full z-50 group"
       style={{
         width: `${RESIZE_HANDLE.HOVER_ZONE_WIDTH}px`,
         ...positionStyle
       }}
       onMouseDown={handleMouseDown}
+      onDoubleClick={handleDoubleClick}
       onMouseEnter={() => !isResizing && setShowHandle(true)}
       onMouseLeave={() => !isResizing && setShowHandle(false)}
     >
       {/* Interactive resize zone with visual feedback */}
       <div
-        className="h-full w-full flex items-center justify-center"
+        className="h-full w-full flex items-center justify-center relative"
         style={{ cursor: 'ew-resize' }}
       >
         {/* Visual indicator: vertical line that adapts to interaction state */}
@@ -135,6 +150,15 @@ function ResizeHandle({
             transitionDuration: `${ANIMATIONS.RESIZE_FEEDBACK}ms`
           }}
         />
+
+        {/* Grip Handle Indicator (Center) */}
+        {showHandle && !isResizing && (
+          <div
+             className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-1 opacity-60"
+          >
+             <div className="w-1 h-4 bg-gray-400 rounded-full" />
+          </div>
+        )}
       </div>
     </div>
   )

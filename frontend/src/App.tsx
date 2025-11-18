@@ -64,6 +64,31 @@ function App() {
     setPendingDiffChunks(null)
   }
 
+  const toggleSidebarMaximize = (side: 'left' | 'right') => {
+    const isMaximized = (side === 'left' ? sidebarWidths.left : sidebarWidths.right) > window.innerWidth * 0.9
+    
+    if (isMaximized) {
+      // Restore to default
+      // Ideally we would restore to previous width, but for now we can restore to default
+      updateSidebarWidths({
+        [side]: side === 'left' ? 256 : 384
+      })
+      
+      // Optional: re-open the other sidebar if it was closed?
+      // We can't know if it was open before, so let's leave it as is or maybe open it if it was likely open.
+      // For simplicity, just restore current sidebar width.
+    } else {
+      // Maximize
+      if (side === 'left') {
+        setRightSidebarExpanded(false)
+        updateSidebarWidths({ left: window.innerWidth })
+      } else {
+        setLeftSidebarExpanded(false)
+        updateSidebarWidths({ right: window.innerWidth })
+      }
+    }
+  }
+
   return (
     <div className="h-screen flex">
       <LeftSidebar
@@ -71,6 +96,7 @@ function App() {
         onToggle={() => setLeftSidebarExpanded(!leftSidebarExpanded)}
         width={sidebarWidths.left}
         onResize={(width) => updateSidebarWidths({ left: width })}
+        onMaximize={() => toggleSidebarMaximize('left')}
         rightSidebarWidth={rightSidebarExpanded ? sidebarWidths.right : 0}
         documents={documents}
         folders={folders}
@@ -100,6 +126,7 @@ function App() {
         onToggle={() => setRightSidebarExpanded(!rightSidebarExpanded)}
         width={sidebarWidths.right}
         onResize={(width) => updateSidebarWidths({ right: width })}
+        onMaximize={() => toggleSidebarMaximize('right')}
         leftSidebarWidth={leftSidebarExpanded ? sidebarWidths.left : 0}
         selectedText={selectedText}
         canvasContent={canvasContent}

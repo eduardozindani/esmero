@@ -11,6 +11,7 @@ interface RightSidebarProps {
   onToggle: () => void
   width: number
   onResize: (width: number) => void
+  onMaximize?: () => void
   leftSidebarWidth: number
   selectedText: string | null
   canvasContent: string
@@ -26,6 +27,7 @@ function RightSidebar({
   onToggle,
   width,
   onResize,
+  onMaximize,
   leftSidebarWidth,
   selectedText,
   canvasContent,
@@ -195,6 +197,7 @@ function RightSidebar({
             <ResizeHandle
               side="right"
               onResize={onResize}
+              onMaximize={onMaximize}
               currentWidth={width}
               otherSidebarWidth={leftSidebarWidth}
               onResizeStart={() => setIsResizing(true)}

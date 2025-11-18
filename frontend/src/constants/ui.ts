@@ -40,6 +40,9 @@ export const SIDEBAR_CONSTRAINTS = {
   // Minimum width for sidebars (in pixels)
   MIN_WIDTH: 150,
 
+  // Minimum width for the center canvas (in pixels)
+  MIN_CANVAS_WIDTH: 400,
+
   // Maximum width as percentage of viewport
   MAX_WIDTH_PERCENT: 0.5,
 

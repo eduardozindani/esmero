@@ -137,7 +137,6 @@ function Canvas({
         // contentRect.width is the CONTENT area (excludes padding)
         // Remove padding when content width drops to 4px or less
         const shouldUsePadding = contentWidth > MIN_CONTENT_WIDTH
-        console.log('Canvas contentRect.width:', contentWidth, '| shouldUsePadding:', shouldUsePadding, '| threshold:', MIN_CONTENT_WIDTH)
         setUsePadding(shouldUsePadding)
       }
     })

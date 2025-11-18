@@ -11,6 +11,7 @@ interface LeftSidebarProps {
   onToggle: () => void
   width: number
   onResize: (width: number) => void
+  onMaximize?: () => void
   rightSidebarWidth: number
   documents: Document[]
   folders: Folder[]
@@ -29,6 +30,7 @@ function LeftSidebar({
   onToggle,
   width,
   onResize,
+  onMaximize,
   rightSidebarWidth,
   documents,
   folders,
@@ -121,6 +123,7 @@ function LeftSidebar({
             <ResizeHandle
               side="left"
               onResize={onResize}
+              onMaximize={onMaximize}
               currentWidth={width}
               otherSidebarWidth={rightSidebarWidth}
               onResizeStart={() => setIsResizing(true)}
