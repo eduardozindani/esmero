@@ -130,11 +130,11 @@ function LeftSidebar({
               onResizeEnd={() => setIsResizing(false)}
             />
 
-            {/* Close trigger strip spanning both sides of division */}
+            {/* Close trigger strip - Only in centered vertical region */}
             {!isResizing && (
               <div
                 onClick={onToggle}
-                className="absolute -right-10 top-0 h-full w-20 z-20 cursor-pointer"
+                className="absolute -right-10 top-1/2 -translate-y-1/2 h-2/5 w-20 z-20 cursor-pointer"
                 onMouseEnter={() => setShowCloseTrigger(true)}
                 onMouseLeave={() => setShowCloseTrigger(false)}
               >

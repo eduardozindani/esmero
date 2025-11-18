@@ -258,7 +258,7 @@ function Canvas({
   return (
     <div
       ref={editorRef}
-      className={`flex-1 min-w-0 bg-white relative overflow-y-auto overflow-x-hidden cursor-text min-h-full py-8 ${usePadding ? 'px-8' : ''}`}
+      className={`flex-1 min-w-0 bg-white relative overflow-y-auto overflow-x-hidden cursor-text min-h-full py-8 ${usePadding ? 'px-16' : ''}`}
       onClick={handleCanvasClick}
     >
       <EditorContent editor={editor} />
