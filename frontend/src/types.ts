@@ -16,6 +16,7 @@ export interface Document {
 export interface Folder {
   id: string
   name: string
+  parentFolderId: string | null  // null = root level folder
   createdAt: number
   updatedAt: number
 }

@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useEditor, EditorContent } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import Heading from '@tiptap/extension-heading'
@@ -38,6 +38,7 @@ function Canvas({
   focusTrigger
 }: CanvasProps) {
   const editorRef = useRef<HTMLDivElement>(null)
+  const [usePadding, setUsePadding] = useState(true)
 
   const editor = useEditor({
     extensions: [
@@ -64,8 +65,8 @@ function Canvas({
         'data-placeholder': 'Start writing...',
       },
       handleKeyDown: (view, event) => {
-        // Intercept Enter key at TipTap level (before internal handlers)
-        if (event.key === 'Enter' && !event.shiftKey) {
+        // Intercept Shift+Enter for save (let regular Enter create new lines)
+        if (event.key === 'Enter' && event.shiftKey) {
           event.preventDefault()
           const textContent = view.state.doc.textContent
 
@@ -78,7 +79,7 @@ function Canvas({
           }
           return true // Handled, don't propagate
         }
-        return false // Not handled, let TipTap process other keys
+        return false // Not handled, let TipTap process other keys (including regular Enter)
       },
     },
     onUpdate: ({ editor }) => {
@@ -122,6 +123,31 @@ function Canvas({
     editor.commands.focus()
     editor.commands.setTextSelection(lastPos)
   }, [editor, focusTrigger])
+
+  // Dynamically adjust padding based on Canvas width
+  useEffect(() => {
+    const editorElement = editorRef.current
+    if (!editorElement) return
+
+    const MIN_CONTENT_WIDTH = 4 // Remove padding when content area ≤ 4px
+
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const contentWidth = entry.contentRect.width
+        // contentRect.width is the CONTENT area (excludes padding)
+        // Remove padding when content width drops to 4px or less
+        const shouldUsePadding = contentWidth > MIN_CONTENT_WIDTH
+        console.log('Canvas contentRect.width:', contentWidth, '| shouldUsePadding:', shouldUsePadding, '| threshold:', MIN_CONTENT_WIDTH)
+        setUsePadding(shouldUsePadding)
+      }
+    })
+
+    resizeObserver.observe(editorElement)
+
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [])
 
   // Global click handler for diff buttons (bypasses TipTap event system)
   useEffect(() => {
@@ -233,7 +259,7 @@ function Canvas({
   return (
     <div
       ref={editorRef}
-      className="flex-1 bg-white relative overflow-y-auto cursor-text min-h-full p-8"
+      className={`flex-1 min-w-0 bg-white relative overflow-y-auto overflow-x-hidden cursor-text min-h-full py-8 ${usePadding ? 'px-8' : ''}`}
       onClick={handleCanvasClick}
     >
       <EditorContent editor={editor} />

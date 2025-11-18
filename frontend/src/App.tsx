@@ -8,6 +8,7 @@ import { generateTitle } from './services/api'
 import { generateId } from './utils/id'
 import { extractTextFromHTML, isHTMLEmpty } from './utils/html'
 import { ANIMATIONS } from './constants/ui'
+import { getCurrentFolderId, deleteFolderRecursive, navigateBack } from './utils/folders'
 import type { Document } from './types'
 
 function App() {
@@ -15,7 +16,7 @@ function App() {
   const [folders, setFolders] = useFolders()
   const [sidebarWidths, updateSidebarWidths] = useSidebarWidths()
   const [currentDocumentId, setCurrentDocumentId] = useState<string | null>(null)
-  const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
+  const [folderPath, setFolderPath] = useState<string[]>([])  // Replace currentFolderId with path
   const [canvasContent, setCanvasContent] = useState('')
   const [selectedText, setSelectedText] = useState<string | null>(null)
   const [leftSidebarExpanded, setLeftSidebarExpanded] = useState(false)
@@ -60,7 +61,7 @@ function App() {
         const currentText = extractTextFromHTML(content)
         const existingText = extractTextFromHTML(existingDoc.content)
         contentChanged = currentText !== existingText
-        const folderChanged = existingDoc.folderId !== currentFolderId
+        const folderChanged = existingDoc.folderId !== getCurrentFolderId(folderPath)
 
         if (!contentChanged && !folderChanged) {
           // No actual changes (content or folder) - just clear the canvas
@@ -80,7 +81,7 @@ function App() {
           ...existingDoc,
           content,
           updatedAt: now,
-          folderId: currentFolderId,  // Update folder location - document moves to current context
+          folderId: getCurrentFolderId(folderPath),  // Update folder location - document moves to current context
           // For updates: preserve existing title, no loading state
         }
       : {
@@ -90,7 +91,7 @@ function App() {
           title: '',
           createdAt: now,
           updatedAt: now,
-          folderId: currentFolderId,
+          folderId: getCurrentFolderId(folderPath),
           titleLoading: true,
           documentJustCreated: true
         }
@@ -171,24 +172,39 @@ function App() {
   }
 
   const handleFolderClick = (folderId: string | null) => {
-    // Update folder context without clearing canvas - content persists across folders
-    setCurrentFolderId(folderId)
+    // Navigate to folder by setting the path
+    if (folderId) {
+      // Push folder to path (going deeper)
+      setFolderPath(prev => [...prev, folderId])
+    } else {
+      // Go to root (clear path)
+      setFolderPath([])
+    }
+    // Request canvas focus
+    setFocusCanvasTrigger(prev => prev + 1)
+  }
+
+  const handleNavigateBack = () => {
+    // Go back one level in folder hierarchy
+    setFolderPath(prev => navigateBack(prev))
     // Request canvas focus
     setFocusCanvasTrigger(prev => prev + 1)
   }
 
   const handleCreateFolder = (name: string) => {
     const now = Date.now()
+    const currentFolderId = getCurrentFolderId(folderPath)
     const newFolder = {
       id: generateId('folder'),
       name,
+      parentFolderId: currentFolderId,  // New folder is child of current folder
       createdAt: now,
       updatedAt: now,
     }
 
     setFolders([...folders, newFolder])
-    // Set new folder context without clearing canvas - content persists
-    setCurrentFolderId(newFolder.id)
+    // Navigate into the new folder
+    setFolderPath(prev => [...prev, newFolder.id])
     // Request canvas focus
     setFocusCanvasTrigger(prev => prev + 1)
   }
@@ -236,12 +252,21 @@ function App() {
   }
 
   const handleDeleteFolder = (folderId: string) => {
-    // Delete the folder
-    const updatedFolders = folders.filter(f => f.id !== folderId)
+    // Use recursive delete to remove folder and all descendants
+    const { folders: updatedFolders, documents: updatedDocuments } = deleteFolderRecursive(
+      folders,
+      documents,
+      folderId
+    )
     setFolders(updatedFolders)
-    // Delete all documents in this folder
-    const updatedDocuments = documents.filter(doc => doc.folderId !== folderId)
     setDocuments(updatedDocuments)
+
+    // If we're currently inside the deleted folder or its descendants, navigate to parent
+    if (folderPath.includes(folderId)) {
+      // Find the path up to (but not including) the deleted folder
+      const indexOfDeleted = folderPath.indexOf(folderId)
+      setFolderPath(folderPath.slice(0, indexOfDeleted))
+    }
   }
 
   const handleAcceptChunk = (chunkId: string) => {
@@ -278,12 +303,14 @@ function App() {
         onToggle={() => setLeftSidebarExpanded(!leftSidebarExpanded)}
         width={sidebarWidths.left}
         onResize={(width) => updateSidebarWidths({ left: width })}
+        rightSidebarWidth={rightSidebarExpanded ? sidebarWidths.right : 0}
         documents={documents}
         folders={folders}
-        currentFolderId={currentFolderId}
+        folderPath={folderPath}
         onDocumentClick={handleLoadDocument}
         onCreateFolder={handleCreateFolder}
         onFolderClick={handleFolderClick}
+        onNavigateBack={handleNavigateBack}
         onUpdateFolderName={handleUpdateFolderName}
         onDeleteDocument={handleDeleteDocument}
         onDeleteFolder={handleDeleteFolder}
@@ -305,10 +332,11 @@ function App() {
         onToggle={() => setRightSidebarExpanded(!rightSidebarExpanded)}
         width={sidebarWidths.right}
         onResize={(width) => updateSidebarWidths({ right: width })}
+        leftSidebarWidth={leftSidebarExpanded ? sidebarWidths.left : 0}
         selectedText={selectedText}
         canvasContent={canvasContent}
         currentDocumentId={currentDocumentId}
-        currentFolderId={currentFolderId}
+        currentFolderId={getCurrentFolderId(folderPath)}
         documents={documents}
         folders={folders}
         onDiffReceived={setPendingDiffChunks}

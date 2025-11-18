@@ -5,6 +5,7 @@ interface ResizeHandleProps {
   side: 'left' | 'right'
   onResize: (newWidth: number) => void
   currentWidth: number
+  otherSidebarWidth: number
   onResizeStart?: () => void
   onResizeEnd?: () => void
 }
@@ -24,6 +25,7 @@ function ResizeHandle({
   side,
   onResize,
   currentWidth,
+  otherSidebarWidth,
   onResizeStart,
   onResizeEnd
 }: ResizeHandleProps) {
@@ -60,8 +62,9 @@ function ResizeHandle({
         ? startWidth + deltaX
         : startWidth - deltaX
 
-      // Apply constraints to prevent sidebars from becoming too small or too large
-      const maxWidth = window.innerWidth * SIDEBAR_CONSTRAINTS.MAX_WIDTH_PERCENT
+      // Apply constraints to prevent sidebars from becoming too small or unusably large
+      // Max width = viewport width - other sidebar's width (allows sidebars to completely cover canvas)
+      const maxWidth = window.innerWidth - otherSidebarWidth
       const constrainedWidth = Math.min(
         Math.max(newWidth, SIDEBAR_CONSTRAINTS.MIN_WIDTH),
         maxWidth
@@ -89,7 +92,7 @@ function ResizeHandle({
       document.removeEventListener('mouseup', handleMouseUp)
       document.body.style.userSelect = prevUserSelect
     }
-  }, [isResizing, startX, startWidth, side, onResize, onResizeEnd])
+  }, [isResizing, startX, startWidth, side, otherSidebarWidth, onResize, onResizeEnd])
 
   // Use inline styles for positioning instead of dynamic Tailwind classes
   // Dynamic template strings don't work with Tailwind JIT compiler

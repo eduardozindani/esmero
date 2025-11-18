@@ -15,15 +15,9 @@ function ConversationDisplay({ messages }: ConversationDisplayProps) {
 
   return (
     <div className="flex-1 overflow-y-auto p-4">
-      {messages.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center mt-8">
-          Start a conversation with the agent
-        </p>
-      ) : (
-        messages.map((message) => (
-          <MessageBubble key={message.id} message={message} />
-        ))
-      )}
+      {messages.map((message) => (
+        <MessageBubble key={message.id} message={message} />
+      ))}
       <div ref={bottomRef} />
     </div>
   )

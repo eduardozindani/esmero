@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import type { Document, Folder } from '../types'
+import { getCurrentFolderId, getChildFolders, getAllDescendantFolders, getAllDescendantDocuments } from '../utils/folders'
 import FolderClosed from './icons/FolderClosed'
 import FolderOpen from './icons/FolderOpen'
 import DocumentIcon from './icons/DocumentIcon'
@@ -10,12 +11,14 @@ interface LeftSidebarProps {
   onToggle: () => void
   width: number
   onResize: (width: number) => void
+  rightSidebarWidth: number
   documents: Document[]
   folders: Folder[]
-  currentFolderId: string | null
+  folderPath: string[]
   onDocumentClick: (documentId: string) => void
   onCreateFolder: (name: string) => void
   onFolderClick: (folderId: string | null) => void
+  onNavigateBack: () => void
   onUpdateFolderName: (folderId: string, newName: string) => void
   onDeleteDocument: (documentId: string) => void
   onDeleteFolder: (folderId: string) => void
@@ -26,12 +29,14 @@ function LeftSidebar({
   onToggle,
   width,
   onResize,
+  rightSidebarWidth,
   documents,
   folders,
-  currentFolderId,
+  folderPath,
   onDocumentClick,
   onCreateFolder,
   onFolderClick,
+  onNavigateBack,
   onUpdateFolderName,
   onDeleteDocument,
   onDeleteFolder
@@ -44,14 +49,13 @@ function LeftSidebar({
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; folderId?: string; documentId?: string } | null>(null)
   const [isResizing, setIsResizing] = useState(false)
 
+  // Get current folder ID from path
+  const currentFolderId = getCurrentFolderId(folderPath)
+
   const handleDeleteFolder = (folderId: string) => {
     onDeleteFolder(folderId)
     setFolderToDelete(null)
     setContextMenu(null)
-    // If we're currently in this folder, go back to all
-    if (currentFolderId === folderId) {
-      onFolderClick(null)
-    }
   }
 
   const handleDeleteDocument = (documentId: string) => {
@@ -71,13 +75,12 @@ function LeftSidebar({
     setShowCloseTrigger(false)
   }, [isExpanded])
 
-  // Filter and sort documents
-  const filteredDocuments = currentFolderId
-    ? documents.filter(doc => doc.folderId === currentFolderId)
-    : documents.filter(doc => doc.folderId === null)
+  // Filter documents and folders for current level
+  const filteredDocuments = documents.filter(doc => doc.folderId === currentFolderId)
+  const childFolders = getChildFolders(folders, currentFolderId)
 
   const sortedDocuments = [...filteredDocuments].sort((a, b) => b.updatedAt - a.updatedAt)
-  const sortedFolders = [...folders].sort((a, b) => b.updatedAt - a.updatedAt)
+  const sortedChildFolders = [...childFolders].sort((a, b) => b.updatedAt - a.updatedAt)
 
   return (
     <>
@@ -119,6 +122,7 @@ function LeftSidebar({
               side="left"
               onResize={onResize}
               currentWidth={width}
+              otherSidebarWidth={rightSidebarWidth}
               onResizeStart={() => setIsResizing(true)}
               onResizeEnd={() => setIsResizing(false)}
             />
@@ -185,7 +189,7 @@ function LeftSidebar({
                   ) : (
                     <div className="flex items-center gap-2 min-w-0">
                       <span
-                        onClick={() => onFolderClick(null)}
+                        onClick={onNavigateBack}
                         className="flex-shrink-0 text-gray-600 cursor-pointer hover:text-gray-800 transition px-2 py-1"
                       >
                         ←
@@ -207,13 +211,24 @@ function LeftSidebar({
                       </div>
                     </div>
                   )}
+
+                  {/* New Folder button when inside a folder (below header) */}
+                  <div className="mt-2">
+                    <div
+                      onClick={() => onCreateFolder('New Folder')}
+                      className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer transition"
+                    >
+                      <span className="flex-shrink-0 text-gray-600 text-sm">+</span>
+                      <p className="text-sm text-gray-600 font-bold">New Folder</p>
+                    </div>
+                  </div>
                 </div>
               )}
 
-              {/* Folders Section */}
-              {!currentFolderId && sortedFolders.length > 0 && (
+              {/* Folders Section - show child folders at any level */}
+              {sortedChildFolders.length > 0 && (
                 <div className="mb-4">
-                  {sortedFolders.map(folder => (
+                  {sortedChildFolders.map(folder => (
                     <div
                       key={folder.id}
                       onClick={() => onFolderClick(folder.id)}
@@ -291,7 +306,18 @@ function LeftSidebar({
                 <div className="bg-white rounded-lg p-6 max-w-sm mx-4" onClick={(e) => e.stopPropagation()}>
                   <h3 className="text-lg font-bold mb-2">Delete Folder?</h3>
                   <p className="text-sm text-gray-600 mb-4">
-                    This will delete "{folders.find(f => f.id === folderToDelete)?.name}" and all {documents.filter(d => d.folderId === folderToDelete).length} document(s) inside.
+                    {(() => {
+                      const folderName = folders.find(f => f.id === folderToDelete)?.name
+                      const descendantFolders = getAllDescendantFolders(folders, folderToDelete)
+                      const allDocs = getAllDescendantDocuments(documents, folders, folderToDelete)
+                      const directDocs = documents.filter(d => d.folderId === folderToDelete)
+
+                      if (descendantFolders.length > 0) {
+                        return `This will delete "${folderName}" and ${descendantFolders.length} subfolder(s) containing ${allDocs.length + directDocs.length} document(s) total.`
+                      } else {
+                        return `This will delete "${folderName}" and all ${directDocs.length} document(s) inside.`
+                      }
+                    })()}
                   </p>
                   <div className="flex gap-2 justify-end">
                     <button
