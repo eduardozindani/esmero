@@ -14,9 +14,19 @@ const extractPlainText = (html: string): string => {
 }
 
 export const generateTitle = async (content: string): Promise<string> => {
+  // Extract plain text from HTML for title generation
+  const plainText = extractPlainText(content)
+
+  // Fallback function to generate title from content
+  const getFallbackTitle = () => {
+    const words = plainText.trim().split(/\s+/)
+    if (words.length === 0 || (words.length === 1 && words[0] === '')) return 'Untitled'
+    return words.slice(0, 4).join(' ')
+  }
+
   try {
-    // Extract plain text from HTML for title generation
-    const plainText = extractPlainText(content)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 5000) // 5s timeout
 
     const response = await fetch(`${API_BASE_URL}/api/generate-title`, {
       method: 'POST',
@@ -24,7 +34,10 @@ export const generateTitle = async (content: string): Promise<string> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ content: plainText }),
+      signal: controller.signal
     })
+
+    clearTimeout(timeoutId)
 
     if (!response.ok) {
       throw new Error('Failed to generate title')
@@ -33,8 +46,8 @@ export const generateTitle = async (content: string): Promise<string> => {
     const data: GenerateTitleResponse = await response.json()
     return data.title
   } catch (error) {
-    console.error('Error generating title:', error)
-    return 'Untitled'
+    console.error('Error generating title (using fallback):', error)
+    return getFallbackTitle()
   }
 }
 

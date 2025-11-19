@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Document, Folder } from '../types'
 import { getCurrentFolderId, getChildFolders, getAllDescendantFolders, getAllDescendantDocuments } from '../utils/folders'
 import FolderClosed from './icons/FolderClosed'
@@ -21,8 +21,11 @@ interface LeftSidebarProps {
   onFolderClick: (folderId: string | null) => void
   onNavigateBack: () => void
   onUpdateFolderName: (folderId: string, newName: string) => void
+  onUpdateDocumentTitle: (documentId: string, newTitle: string) => void
   onDeleteDocument: (documentId: string) => void
   onDeleteFolder: (folderId: string) => void
+  onNewDocument: () => void
+  currentDocumentId: string | null
 }
 
 function LeftSidebar({
@@ -40,19 +43,52 @@ function LeftSidebar({
   onFolderClick,
   onNavigateBack,
   onUpdateFolderName,
+  onUpdateDocumentTitle,
   onDeleteDocument,
-  onDeleteFolder
+  onDeleteFolder,
+  onNewDocument,
+  currentDocumentId
 }: LeftSidebarProps) {
   const [showOpenTrigger, setShowOpenTrigger] = useState(false)
   const [showCloseTrigger, setShowCloseTrigger] = useState(false)
   const [editingFolderName, setEditingFolderName] = useState(false)
   const [editedName, setEditedName] = useState('')
+  
+  // Document renaming state
+  const [renamingDocumentId, setRenamingDocumentId] = useState<string | null>(null)
+  const [renamingDocumentTitle, setRenamingDocumentTitle] = useState('')
+
   const [folderToDelete, setFolderToDelete] = useState<string | null>(null)
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; folderId?: string; documentId?: string } | null>(null)
   const [isResizing, setIsResizing] = useState(false)
+  
+  // New state for pending folder creation
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('New Folder')
+  const newFolderInputRef = useRef<HTMLInputElement>(null)
+
+  // Focus and select input when entering creation mode
+  useEffect(() => {
+    if (isCreatingFolder && newFolderInputRef.current) {
+      newFolderInputRef.current.focus()
+      newFolderInputRef.current.select()
+    }
+  }, [isCreatingFolder])
 
   // Get current folder ID from path
   const currentFolderId = getCurrentFolderId(folderPath)
+
+  const handleCreateFolderStart = () => {
+    setIsCreatingFolder(true)
+    setNewFolderName('New Folder')
+  }
+
+  const handleCreateFolderConfirm = () => {
+    if (newFolderName.trim()) {
+      onCreateFolder(newFolderName.trim())
+    }
+    setIsCreatingFolder(false)
+  }
 
   const handleDeleteFolder = (folderId: string) => {
     onDeleteFolder(folderId)
@@ -90,7 +126,7 @@ function LeftSidebar({
       {!isExpanded && (
         <div
           onClick={onToggle}
-          className="fixed left-0 top-0 h-full w-20 z-10 cursor-pointer"
+          className="fixed left-0 top-1/2 -translate-y-1/2 h-2/5 w-20 z-10 cursor-pointer"
           onMouseEnter={() => setShowOpenTrigger(true)}
           onMouseLeave={() => setShowOpenTrigger(false)}
         >
@@ -153,20 +189,48 @@ function LeftSidebar({
             )}
 
             <div className="flex flex-col h-full p-4">
-              {/* New Folder - only show when NOT in a folder */}
-              {!currentFolderId && (
-                <div className="mb-4">
+              {/* Global Actions: New Folder / New Document - Always visible at top */}
+              <div className="mb-4 space-y-1">
+                {isCreatingFolder ? (
+                  <div className="flex items-center gap-2 p-2 rounded cursor-pointer">
+                    <FolderOpen className="flex-shrink-0 text-gray-600" />
+                    <input
+                      ref={newFolderInputRef}
+                      type="text"
+                      value={newFolderName}
+                      onChange={(e) => setNewFolderName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          handleCreateFolderConfirm()
+                        } else if (e.key === 'Escape') {
+                          setIsCreatingFolder(false)
+                        }
+                      }}
+                      onBlur={handleCreateFolderConfirm}
+                      className="flex-1 min-w-0 text-sm text-gray-800 font-bold bg-transparent focus:outline-none -ml-[1px]"
+                    />
+                  </div>
+                ) : (
                   <div
-                    onClick={() => onCreateFolder('New Folder')}
+                    onClick={handleCreateFolderStart}
                     className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer transition"
                   >
                     <span className="flex-shrink-0 text-gray-600 text-sm">+</span>
                     <p className="text-sm text-gray-600 font-bold">New Folder</p>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Folder name header when inside a folder */}
+                {/* New Document Button */}
+                <div
+                  onClick={onNewDocument}
+                  className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer transition"
+                >
+                  <span className="flex-shrink-0 text-gray-600 text-sm">+</span>
+                  <p className="text-sm text-gray-600 font-bold">New Document</p>
+                </div>
+              </div>
+
+              {/* Navigation Header - Only when deep in a folder */}
               {currentFolderId && (
                 <div className="mb-4">
                   {editingFolderName ? (
@@ -214,20 +278,10 @@ function LeftSidebar({
                       </div>
                     </div>
                   )}
-
-                  {/* New Folder button when inside a folder (below header) */}
-                  <div className="mt-2">
-                    <div
-                      onClick={() => onCreateFolder('New Folder')}
-                      className="flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer transition"
-                    >
-                      <span className="flex-shrink-0 text-gray-600 text-sm">+</span>
-                      <p className="text-sm text-gray-600 font-bold">New Folder</p>
-                    </div>
-                  </div>
                 </div>
               )}
 
+              {/* Content List */}
               {/* Folders Section - show child folders at any level */}
               {sortedChildFolders.length > 0 && (
                 <div className="mb-4">
@@ -256,7 +310,14 @@ function LeftSidebar({
                 {sortedDocuments.map(doc => (
                   <div
                     key={doc.id}
-                    onClick={() => onDocumentClick(doc.id)}
+                    onClick={() => {
+                      if (currentDocumentId === doc.id) {
+                        setRenamingDocumentId(doc.id)
+                        setRenamingDocumentTitle(doc.title)
+                      } else {
+                        onDocumentClick(doc.id)
+                      }
+                    }}
                     onContextMenu={(e) => {
                       e.preventDefault()
                       e.stopPropagation()
@@ -266,15 +327,47 @@ function LeftSidebar({
                       doc.documentJustCreated ? 'animate-slideIn' : ''
                     } ${
                       doc.documentDeleting ? 'animate-slideOut' : ''
+                    } ${
+                      currentDocumentId === doc.id ? 'bg-gray-200' : ''
                     }`}
                   >
                     <DocumentIcon className="flex-shrink-0 text-gray-600" />
-                    {doc.titleLoading ? (
-                      <div className="flex-1 h-4 bg-gray-300 rounded animate-pulse" />
+                    {renamingDocumentId === doc.id ? (
+                      <input
+                        type="text"
+                        value={renamingDocumentTitle}
+                        onChange={(e) => setRenamingDocumentTitle(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            if (renamingDocumentTitle.trim() && renamingDocumentTitle.trim() !== doc.title) {
+                              onUpdateDocumentTitle(doc.id, renamingDocumentTitle.trim())
+                            }
+                            setRenamingDocumentId(null)
+                          } else if (e.key === 'Escape') {
+                            setRenamingDocumentId(null)
+                          }
+                        }}
+                        onBlur={() => {
+                          if (renamingDocumentTitle.trim() && renamingDocumentTitle.trim() !== doc.title) {
+                            onUpdateDocumentTitle(doc.id, renamingDocumentTitle.trim())
+                          }
+                          setRenamingDocumentId(null)
+                        }}
+                        autoFocus
+                        onFocus={(e) => e.target.select()}
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex-1 min-w-0 text-sm text-gray-800 font-bold bg-transparent focus:outline-none -ml-[1px]"
+                      />
                     ) : (
-                      <p className={`text-sm text-gray-800 truncate ${doc.titleJustGenerated ? 'animate-fadeIn' : ''}`}>
-                        {doc.title}
-                      </p>
+                      <>
+                        {doc.titleLoading ? (
+                          <div className="flex-1 h-4 bg-gray-300 rounded animate-pulse" />
+                        ) : (
+                          <p className={`text-sm text-gray-800 truncate ${doc.titleJustGenerated ? 'animate-fadeIn' : ''}`}>
+                            {doc.title || 'Untitled'}
+                          </p>
+                        )}
+                      </>
                     )}
                   </div>
                 ))}
@@ -290,7 +383,12 @@ function LeftSidebar({
                   <button
                     onClick={() => {
                       if (contextMenu.folderId) {
-                        setFolderToDelete(contextMenu.folderId)
+                        const allDocs = getAllDescendantDocuments(documents, folders, contextMenu.folderId)
+                        if (allDocs.length > 0) {
+                          setFolderToDelete(contextMenu.folderId)
+                        } else {
+                          handleDeleteFolder(contextMenu.folderId)
+                        }
                       } else if (contextMenu.documentId) {
                         handleDeleteDocument(contextMenu.documentId)
                       }
@@ -313,12 +411,11 @@ function LeftSidebar({
                       const folderName = folders.find(f => f.id === folderToDelete)?.name
                       const descendantFolders = getAllDescendantFolders(folders, folderToDelete)
                       const allDocs = getAllDescendantDocuments(documents, folders, folderToDelete)
-                      const directDocs = documents.filter(d => d.folderId === folderToDelete)
 
                       if (descendantFolders.length > 0) {
-                        return `This will delete "${folderName}" and ${descendantFolders.length} subfolder(s) containing ${allDocs.length + directDocs.length} document(s) total.`
+                        return `This will delete "${folderName}" and ${descendantFolders.length} subfolder${descendantFolders.length === 1 ? '' : 's'}, containing ${allDocs.length} document${allDocs.length === 1 ? '' : 's'} total.`
                       } else {
-                        return `This will delete "${folderName}" and all ${directDocs.length} document(s) inside.`
+                        return `This will delete "${folderName}" and the ${allDocs.length} document${allDocs.length === 1 ? '' : 's'} inside.`
                       }
                     })()}
                   </p>

@@ -5,6 +5,7 @@ export interface Document {
   createdAt: number
   updatedAt: number
   folderId: string | null
+  titleUserModified?: boolean     // If true, AI won't overwrite title
 
   // Animation state flags (never persisted to localStorage)
   titleLoading?: boolean          // Shows skeleton loader during title generation
@@ -19,6 +20,10 @@ export interface Folder {
   parentFolderId: string | null  // null = root level folder
   createdAt: number
   updatedAt: number
+  
+  // Animation state flags
+  folderJustCreated?: boolean
+  folderDeleting?: boolean
 }
 
 // Agent Message Type

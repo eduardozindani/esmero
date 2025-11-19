@@ -21,9 +21,11 @@ function App() {
     createFolder,
     deleteFolder,
     updateFolderName,
+    updateDocumentTitle,
     navigateToFolder,
     navigateBack,
     setCanvasContent,
+    startNewDocument
   } = useFileSystem()
 
   const [sidebarWidths, updateSidebarWidths] = useSidebarWidths()
@@ -98,6 +100,7 @@ function App() {
         onResize={(width) => updateSidebarWidths({ left: width })}
         onMaximize={() => toggleSidebarMaximize('left')}
         rightSidebarWidth={rightSidebarExpanded ? sidebarWidths.right : 0}
+        currentDocumentId={currentDocumentId}
         documents={documents}
         folders={folders}
         folderPath={folderPath}
@@ -106,14 +109,19 @@ function App() {
         onFolderClick={navigateToFolder}
         onNavigateBack={navigateBack}
         onUpdateFolderName={updateFolderName}
+        onUpdateDocumentTitle={updateDocumentTitle}
         onDeleteDocument={deleteDocument}
         onDeleteFolder={deleteFolder}
+        onNewDocument={startNewDocument}
       />
       <Canvas
         content={canvasContent}
         onChange={setCanvasContent}
         onSelectionChange={setSelectedText}
-        onSave={() => saveDocument(canvasContent)}
+        onSave={() => {
+          saveDocument(canvasContent)
+          startNewDocument()
+        }}
         onDelete={deleteCurrentDocument}
         pendingDiffChunks={pendingDiffChunks}
         onAcceptChunk={handleAcceptChunk}
