@@ -5,6 +5,7 @@ import FolderClosed from './icons/FolderClosed'
 import FolderOpen from './icons/FolderOpen'
 import DocumentIcon from './icons/DocumentIcon'
 import ResizeHandle from './ResizeHandle'
+import { useAutoAnimate } from '@formkit/auto-animate/react'
 
 interface LeftSidebarProps {
   isExpanded: boolean
@@ -66,6 +67,9 @@ function LeftSidebar({
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('New Folder')
   const newFolderInputRef = useRef<HTMLInputElement>(null)
+  
+  // Animate the list of documents/folders automatically
+  const [listParent] = useAutoAnimate()
 
   // Focus and select input when entering creation mode
   useEffect(() => {
@@ -307,9 +311,10 @@ function LeftSidebar({
 
               {/* Documents Section */}
               <div className="flex-1 overflow-y-auto">
-                {sortedDocuments.map(doc => (
-                  <div
-                    key={doc.id}
+                <div ref={listParent}>
+                  {sortedDocuments.map(doc => (
+                    <div
+                      key={doc.id}
                     onClick={() => {
                       if (currentDocumentId === doc.id) {
                         setRenamingDocumentId(doc.id)
@@ -324,10 +329,6 @@ function LeftSidebar({
                       setContextMenu({ x: e.clientX, y: e.clientY, documentId: doc.id })
                     }}
                     className={`flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition ${
-                      doc.documentJustCreated ? 'animate-slideIn' : ''
-                    } ${
-                      doc.documentDeleting ? 'animate-slideOut' : ''
-                    } ${
                       currentDocumentId === doc.id ? 'bg-gray-200' : ''
                     }`}
                   >
@@ -363,14 +364,18 @@ function LeftSidebar({
                         {doc.titleLoading ? (
                           <div className="flex-1 h-4 bg-gray-300 rounded animate-pulse" />
                         ) : (
-                          <p className={`text-sm text-gray-800 truncate ${doc.titleJustGenerated ? 'animate-fadeIn' : ''}`}>
+                          <p 
+                            key={`${doc.id}-${doc.title}`}
+                            className={`text-sm text-gray-800 truncate ${doc.titleJustGenerated ? 'animate-fadeIn' : ''}`}
+                          >
                             {doc.title || 'Untitled'}
                           </p>
                         )}
                       </>
                     )}
-                  </div>
-                ))}
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Context Menu */}

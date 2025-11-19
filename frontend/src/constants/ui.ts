@@ -49,6 +49,9 @@ export const SIDEBAR_CONSTRAINTS = {
   // Default widths (in pixels)
   DEFAULT_LEFT_WIDTH: 256,   // w-64 in Tailwind
   DEFAULT_RIGHT_WIDTH: 384,  // w-96 in Tailwind
+
+  // Edge offset when maximized (keeps resize handle accessible)
+  MAXIMIZE_EDGE_OFFSET: 20,
 } as const
 
 // Animation durations

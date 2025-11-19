@@ -1,0 +1,8 @@
+{
+  "scripts": {
+    "agent": "npm start --prefix agent-cli"
+  },
+  "dependencies": {
+    "@formkit/auto-animate": "^0.9.0"
+  }
+}

@@ -5,6 +5,7 @@ import RightSidebar from './components/RightSidebar/RightSidebar'
 import { useSidebarWidths } from './hooks/useSidebarWidths'
 import { useFileSystem } from './contexts/FileSystemContext'
 import { getCurrentFolderId } from './utils/folders'
+import { SIDEBAR_CONSTRAINTS } from './constants/ui'
 
 function App() {
   const {
@@ -68,25 +69,22 @@ function App() {
 
   const toggleSidebarMaximize = (side: 'left' | 'right') => {
     const isMaximized = (side === 'left' ? sidebarWidths.left : sidebarWidths.right) > window.innerWidth * 0.9
-    
+
     if (isMaximized) {
       // Restore to default
-      // Ideally we would restore to previous width, but for now we can restore to default
       updateSidebarWidths({
-        [side]: side === 'left' ? 256 : 384
+        [side]: side === 'left' ? SIDEBAR_CONSTRAINTS.DEFAULT_LEFT_WIDTH : SIDEBAR_CONSTRAINTS.DEFAULT_RIGHT_WIDTH
       })
-      
-      // Optional: re-open the other sidebar if it was closed?
-      // We can't know if it was open before, so let's leave it as is or maybe open it if it was likely open.
-      // For simplicity, just restore current sidebar width.
     } else {
-      // Maximize
+      // Maximize - leave only edge offset so resize handle remains accessible
+      const maxWidth = window.innerWidth - SIDEBAR_CONSTRAINTS.MAXIMIZE_EDGE_OFFSET
+
       if (side === 'left') {
         setRightSidebarExpanded(false)
-        updateSidebarWidths({ left: window.innerWidth })
+        updateSidebarWidths({ left: maxWidth })
       } else {
         setLeftSidebarExpanded(false)
-        updateSidebarWidths({ right: window.innerWidth })
+        updateSidebarWidths({ right: maxWidth })
       }
     }
   }

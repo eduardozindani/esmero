@@ -88,16 +88,39 @@ export function FileSystemProvider({ children }: { children: React.ReactNode }) 
         const isNew = !currentDocumentId
         const docId = currentDocumentId || generateId('doc')
         
+        // EARLY EXIT CHECK: If it's an update, check if content actually changed
+        // We use the ref to check against the latest state without waiting for a render cycle
+        let contentChanged = false
+        const existingDoc = documentsRef.current.find(d => d.id === docId)
+
+        if (!isNew && existingDoc) {
+            const currentText = extractTextFromHTML(trimmedContent)
+            const existingText = extractTextFromHTML(existingDoc.content)
+            contentChanged = currentText !== existingText
+            const folderChanged = existingDoc.folderId !== getCurrentFolderId(folderPath)
+
+            // If nothing changed, do NOTHING. No save, no API call, no state update.
+            if (!contentChanged && !folderChanged) {
+                console.log('No changes detected, skipping save.')
+                return
+            }
+        } else if (isNew) {
+            contentChanged = true // New docs always count as "changed"
+        }
+        
         // Check if we should generate a title
-        // We trigger generation if it's a new document OR if the current title is empty/loading
-        // and user hasn't manually modified it.
+        // We trigger generation if:
+        // 1. It's a new document
+        // 2. Content changed significantly AND user hasn't manually renamed the file
         let shouldGenerateTitle = false
         
         if (isNew) {
             shouldGenerateTitle = true
         } else {
-            // For existing documents, check the ref to get latest state without depending on it in dependency array
-            const existingDoc = documentsRef.current.find(d => d.id === docId)
+            if (existingDoc && contentChanged && !existingDoc.titleUserModified) {
+                shouldGenerateTitle = true
+            }
+            // Fallback: also generate if title is missing (and not locked)
             if (existingDoc && !existingDoc.title && !existingDoc.titleUserModified) {
                 shouldGenerateTitle = true
             }
@@ -106,31 +129,32 @@ export function FileSystemProvider({ children }: { children: React.ReactNode }) 
         setDocuments((prevDocuments) => {
             const isUpdate = !!currentDocumentId
             
-            // Check if document actually changed
-            let existingDoc = undefined
+            // Check if document actually changed (Double check inside setter for safety)
+            let existingDocInState = undefined
 
             if (isUpdate) {
-                existingDoc = prevDocuments.find(d => d.id === currentDocumentId)
-                if (existingDoc) {
+                existingDocInState = prevDocuments.find(d => d.id === currentDocumentId)
+                if (existingDocInState) {
                     const currentText = extractTextFromHTML(trimmedContent)
-                    const existingText = extractTextFromHTML(existingDoc.content)
-                    const contentChanged = currentText !== existingText
-                    const folderChanged = existingDoc.folderId !== getCurrentFolderId(folderPath)
+                    const existingText = extractTextFromHTML(existingDocInState.content)
+                    const contentChangedInState = currentText !== existingText
+                    const folderChangedInState = existingDocInState.folderId !== getCurrentFolderId(folderPath)
 
-                    if (!contentChanged && !folderChanged) {
+                    if (!contentChangedInState && !folderChangedInState) {
                         return prevDocuments
                     }
                 }
             }
             
-            const newDoc: Document = isUpdate && existingDoc
+            const newDoc: Document = isUpdate && existingDocInState
                 ? {
-                    ...existingDoc,
+                    ...existingDocInState,
                     content: trimmedContent,
                     updatedAt: now,
                     folderId: getCurrentFolderId(folderPath),
-                    // If we are generating title, set loading flag
-                    titleLoading: shouldGenerateTitle ? true : existingDoc.titleLoading
+                    // For existing docs, we do NOT set titleLoading to true. 
+                    // We keep the old title visible until the new one is ready.
+                    titleLoading: existingDocInState.titleLoading
                 }
                 : {
                     id: docId,
@@ -167,7 +191,10 @@ export function FileSystemProvider({ children }: { children: React.ReactNode }) 
                                 ...doc, 
                                 title: title, 
                                 titleLoading: false,
-                                titleJustGenerated: true // Trigger fade-in
+                                // Force a key change to trigger animation by updating updatedAt slightly if needed
+                                // or rely on the title change itself.
+                                titleJustGenerated: true,
+                                // Ensure updatedAt doesn't trigger a resort that looks like a glitch, although save just updated it
                               } 
                             : doc
                     ))
