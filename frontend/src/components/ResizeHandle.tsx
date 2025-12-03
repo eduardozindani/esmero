@@ -36,9 +36,6 @@ function ResizeHandle({
   const [startX, setStartX] = useState(0)
   const [startWidth, setStartWidth] = useState(0)
 
-  // Heuristic for if the sidebar is currently "maximized" (approx full screen)
-  const isMaximized = currentWidth > window.innerWidth * 0.9
-
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // Don't start resize if clicking the maximize button
     if ((e.target as HTMLElement).closest('.maximize-btn')) return
@@ -46,15 +43,32 @@ function ResizeHandle({
     e.preventDefault()
     e.stopPropagation()
 
-    // Lock visual state to prevent flicker during resize
-    setIsResizing(true)
-    setShowHandle(true)
-
-    // Store initial position and width for calculating deltas
+    // Store initial position for drag detection
+    // Don't set isResizing yet - wait for actual mouse movement
+    // This prevents resize from triggering on double-click
     setStartX(e.clientX)
     setStartWidth(currentWidth)
+    setShowHandle(true)
 
-    onResizeStart?.()
+    // Use a flag to track if we should start resizing on first move
+    const startResizeOnMove = (moveEvent: MouseEvent) => {
+      const deltaX = Math.abs(moveEvent.clientX - e.clientX)
+      // Only start resize if mouse moved more than 3px (not a click/double-click)
+      if (deltaX > 3) {
+        setIsResizing(true)
+        onResizeStart?.()
+        document.removeEventListener('mousemove', startResizeOnMove)
+      }
+    }
+
+    const cleanup = () => {
+      document.removeEventListener('mousemove', startResizeOnMove)
+      document.removeEventListener('mouseup', cleanup)
+      setShowHandle(false)
+    }
+
+    document.addEventListener('mousemove', startResizeOnMove)
+    document.addEventListener('mouseup', cleanup)
   }, [currentWidth, onResizeStart])
 
   useEffect(() => {
@@ -111,6 +125,7 @@ function ResizeHandle({
     : { left: `-${halfZoneWidth}px` }
 
   const handleDoubleClick = (e: React.MouseEvent) => {
+    console.log('[ResizeHandle] Double-click detected on', side, 'side')
     e.preventDefault()
     e.stopPropagation()
     onMaximize?.()

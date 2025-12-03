@@ -125,25 +125,33 @@ function Canvas({
   }, [editor, focusTrigger])
 
   // Dynamically adjust padding based on Canvas width
+  // Debounced to prevent glitches during sidebar transitions
   useEffect(() => {
     const editorElement = editorRef.current
     if (!editorElement) return
 
     const MIN_CONTENT_WIDTH = 4 // Remove padding when content area ≤ 4px
+    let timeoutId: ReturnType<typeof setTimeout> | null = null
 
     const resizeObserver = new ResizeObserver((entries) => {
-      for (const entry of entries) {
-        const contentWidth = entry.contentRect.width
-        // contentRect.width is the CONTENT area (excludes padding)
-        // Remove padding when content width drops to 4px or less
-        const shouldUsePadding = contentWidth > MIN_CONTENT_WIDTH
-        setUsePadding(shouldUsePadding)
-      }
+      // Debounce to avoid rapid re-renders during animations
+      if (timeoutId) clearTimeout(timeoutId)
+
+      timeoutId = setTimeout(() => {
+        for (const entry of entries) {
+          const contentWidth = entry.contentRect.width
+          // When canvas is very small (e.g., sidebar maximized), just disable padding
+          // Use a higher threshold to avoid oscillation from padding toggling
+          const shouldUsePadding = contentWidth > 200
+          setUsePadding(shouldUsePadding)
+        }
+      }, 150) // 150ms debounce to skip maximize animations
     })
 
     resizeObserver.observe(editorElement)
 
     return () => {
+      if (timeoutId) clearTimeout(timeoutId)
       resizeObserver.disconnect()
     }
   }, [])

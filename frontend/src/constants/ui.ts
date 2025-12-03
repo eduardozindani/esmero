@@ -51,7 +51,8 @@ export const SIDEBAR_CONSTRAINTS = {
   DEFAULT_RIGHT_WIDTH: 384,  // w-96 in Tailwind
 
   // Edge offset when maximized (keeps resize handle accessible)
-  MAXIMIZE_EDGE_OFFSET: 20,
+  // 50px gives comfortable margin for mouse targeting (handle is 8px wide)
+  MAXIMIZE_EDGE_OFFSET: 50,
 } as const
 
 // Animation durations

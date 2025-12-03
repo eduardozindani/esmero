@@ -55,9 +55,6 @@ export function FileSystemProvider({ children }: { children: React.ReactNode }) 
         setFocusCanvasTrigger(prev => prev + 1)
     }, [])
 
-    // Track pending title generation
-    const titleGenerationRef = useRef<string | null>(null)
-
     // Refs for accessing latest state in timeouts
     const documentsRef = useRef(documents)
     const foldersRef = useRef(folders)

@@ -14,6 +14,7 @@ interface LeftSidebarProps {
   onResize: (width: number) => void
   onMaximize?: () => void
   rightSidebarWidth: number
+  disableTransitions?: boolean
   documents: Document[]
   folders: Folder[]
   folderPath: string[]
@@ -36,6 +37,7 @@ function LeftSidebar({
   onResize,
   onMaximize,
   rightSidebarWidth,
+  disableTransitions,
   documents,
   folders,
   folderPath,
@@ -152,7 +154,7 @@ function LeftSidebar({
       <div
         className={`
           bg-gray-50 border-r border-gray-200 relative flex flex-col
-          ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}
+          ${isResizing || disableTransitions ? '' : 'transition-all duration-300 ease-in-out'}
           ${isExpanded ? '' : 'w-0 overflow-hidden border-0'}
         `}
         style={{ width: isExpanded ? `${width}px` : 0 }}

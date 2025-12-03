@@ -13,6 +13,7 @@ interface RightSidebarProps {
   onResize: (width: number) => void
   onMaximize?: () => void
   leftSidebarWidth: number
+  disableTransitions?: boolean
   selectedText: string | null
   canvasContent: string
   currentDocumentId: string | null
@@ -29,6 +30,7 @@ function RightSidebar({
   onResize,
   onMaximize,
   leftSidebarWidth,
+  disableTransitions,
   selectedText,
   canvasContent,
   currentDocumentId,
@@ -186,7 +188,7 @@ function RightSidebar({
       <div
         className={`
           bg-gray-50 border-l border-gray-200 relative flex flex-col
-          ${isResizing ? '' : 'transition-all duration-300 ease-in-out'}
+          ${isResizing || disableTransitions ? '' : 'transition-all duration-300 ease-in-out'}
           ${isExpanded ? '' : 'w-0 overflow-hidden border-0'}
         `}
         style={{ width: isExpanded ? `${width}px` : 0 }}
