@@ -152,7 +152,7 @@ export function FileSystemProvider({ children }: { children: React.ReactNode }) 
                     content: trimmedContent,
                     updatedAt: now,
                     folderId: getCurrentFolderId(folderPath),
-                    // For existing docs, we do NOT set titleLoading to true. 
+                    // For existing docs, we do NOT set titleLoading to true.
                     // We keep the old title visible until the new one is ready.
                     titleLoading: existingDocInState.titleLoading
                 }
@@ -179,8 +179,15 @@ export function FileSystemProvider({ children }: { children: React.ReactNode }) 
             setCurrentDocumentId(docId)
             // Also update the ref immediately for consistency in this cycle if needed
             currentDocumentIdRef.current = docId
+
+            // Remove the documentJustCreated animation flag after animation completes
+            setTimeout(() => {
+                setDocuments(prev => prev.map(d =>
+                    d.id === docId ? { ...d, documentJustCreated: false } : d
+                ))
+            }, ANIMATIONS.DOCUMENT_SLIDE_IN)
         }
-        
+
         // Trigger Title Generation (Fire and Forget)
         if (shouldGenerateTitle) {
             generateTitle(trimmedContent)
@@ -206,7 +213,7 @@ export function FileSystemProvider({ children }: { children: React.ReactNode }) 
                                 ? { ...doc, titleJustGenerated: false } 
                                 : doc
                         ))
-                    }, ANIMATIONS.FADE_IN)
+                    }, ANIMATIONS.TITLE_FADE_IN)
                 })
                 .catch(err => {
                     console.error('Title generation failed', err)

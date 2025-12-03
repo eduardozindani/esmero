@@ -330,7 +330,7 @@ function LeftSidebar({
                     }}
                     className={`flex items-center gap-2 p-2 hover:bg-gray-200 rounded cursor-pointer mb-1 transition ${
                       currentDocumentId === doc.id ? 'bg-gray-200' : ''
-                    }`}
+                    } ${doc.documentJustCreated ? 'animate-slideIn' : ''}`}
                   >
                     <DocumentIcon className="flex-shrink-0 text-gray-600" />
                     {renamingDocumentId === doc.id ? (

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { STORAGE_KEYS, SIDEBAR_CONSTRAINTS } from '../constants/ui'
 
 interface SidebarWidths {
@@ -6,29 +6,28 @@ interface SidebarWidths {
   right: number
 }
 
-const DEFAULT_WIDTHS: SidebarWidths = {
-  left: SIDEBAR_CONSTRAINTS.DEFAULT_LEFT_WIDTH,
-  right: SIDEBAR_CONSTRAINTS.DEFAULT_RIGHT_WIDTH
+const getInitialWidths = (): SidebarWidths => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTHS)
+    if (stored) {
+      const parsed = JSON.parse(stored)
+      return {
+        left: Math.max(parsed.left || SIDEBAR_CONSTRAINTS.DEFAULT_LEFT_WIDTH, SIDEBAR_CONSTRAINTS.MIN_WIDTH),
+        right: Math.max(parsed.right || SIDEBAR_CONSTRAINTS.DEFAULT_RIGHT_WIDTH, SIDEBAR_CONSTRAINTS.MIN_WIDTH)
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load sidebar widths:', error)
+  }
+
+  return {
+    left: SIDEBAR_CONSTRAINTS.DEFAULT_LEFT_WIDTH,
+    right: SIDEBAR_CONSTRAINTS.DEFAULT_RIGHT_WIDTH
+  }
 }
 
 export const useSidebarWidths = () => {
-  const [widths, setWidths] = useState<SidebarWidths>(DEFAULT_WIDTHS)
-
-  // Load persisted sidebar widths on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEYS.SIDEBAR_WIDTHS)
-      if (stored) {
-        const parsed = JSON.parse(stored)
-        setWidths({
-          left: parsed.left || DEFAULT_WIDTHS.left,
-          right: parsed.right || DEFAULT_WIDTHS.right
-        })
-      }
-    } catch (error) {
-      console.error('Failed to load sidebar widths:', error)
-    }
-  }, [])
+  const [widths, setWidths] = useState<SidebarWidths>(getInitialWidths)
 
   const updateWidths = (newWidths: Partial<SidebarWidths>) => {
     const updated = { ...widths, ...newWidths }

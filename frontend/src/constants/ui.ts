@@ -38,7 +38,7 @@ export const RESIZE_HANDLE = {
 // Sidebar constraints
 export const SIDEBAR_CONSTRAINTS = {
   // Minimum width for sidebars (in pixels)
-  MIN_WIDTH: 150,
+  MIN_WIDTH: 180,
 
   // Minimum width for the center canvas (in pixels)
   MIN_CANVAS_WIDTH: 400,
